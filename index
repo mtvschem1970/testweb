@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maintenance Repair Notification System</title>
+    
+    <!-- Framework: Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Component: SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Custom Config for Tailwind Colors -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        corp: {
+                            blue: '#0f172a',    // Slate 900
+                            lightBlue: '#1e293b', // Slate 800
+                            accent: '#3b82f6',  // Blue 500
+                            gold: '#f59e0b',    // Amber 500
+                            goldHover: '#d97706' // Amber 600
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Sarabun', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-image: linear-gradient(rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.95)), url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            font-family: 'Sarabun', sans-serif;
+        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Folder Styling */
+        .folder-tab {
+            clip-path: polygon(0 0, 150px 0, 170px 100%, 100% 100%, 100% 100%, 0 100%);
+        }
+    </style>
+</head>
+<body class="text-slate-200 h-screen flex flex-col overflow-hidden">
+
+    <!-- HEADER -->
+    <header class="bg-corp-blue border-b border-slate-700 shadow-lg z-20">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <img src="https://sc04.alicdn.com/kf/UTB8j6h1rJnJXKJkSaiy763hwXXaJ.png" alt="Company Logo" class="h-12 w-auto bg-white rounded p-1 object-contain shadow-md">
+                <div>
+                    <h1 class="text-xl font-bold text-white tracking-wide">MAINTENANCE SYSTEM</h1>
+                    <p class="text-xs text-corp-gold font-medium tracking-wider uppercase">Your Company Name</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button onclick="refreshData()" class="p-2 rounded-full hover:bg-slate-700 transition text-slate-400 hover:text-white" title="Refresh Data">🔄</button>
+                <button id="btnLogin" onclick="showLoginModal()" class="bg-corp-gold hover:bg-corp-goldHover text-corp-blue font-bold py-2 px-4 rounded-md transition shadow-md flex items-center gap-2">🔐 <span class="hidden sm:inline">Admin Login</span></button>
+                <button id="btnLogout" onclick="logout()" class="hidden bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md transition shadow-md flex items-center gap-2">🚪 <span class="hidden sm:inline">Logout</span></button>
+            </div>
+        </div>
+    </header>
+
+    <!-- NAVIGATION TABS -->
+    <nav class="bg-corp-lightBlue border-b border-slate-700 shadow-md z-10">
+        <div class="container mx-auto px-4">
+            <div class="flex space-x-1 overflow-x-auto">
+                <button onclick="switchTab('request')" id="tab-request" class="tab-btn px-6 py-3 text-sm font-medium border-b-2 border-transparent hover:text-corp-gold transition whitespace-nowrap text-corp-gold border-corp-gold">📝 Submit Request</button>
+                <button onclick="switchTab('status')" id="tab-status" class="tab-btn px-6 py-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-white transition whitespace-nowrap">📊 Track Status</button>
+                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn hidden admin-only px-6 py-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-white transition whitespace-nowrap">📈 Dashboard</button>
+                <button onclick="switchTab('settings')" id="tab-settings" class="tab-btn hidden admin-only px-6 py-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-white transition whitespace-nowrap">⚙️ Settings</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-900/50 relative">
+        
+        <!-- VIEW: SUBMIT REQUEST -->
+        <div id="view-request" class="view-section max-w-3xl mx-auto fade-in">
+            <div class="bg-corp-lightBlue rounded-xl shadow-2xl border border-slate-700 overflow-hidden">
+                <div class="bg-gradient-to-r from-corp-blue to-corp-lightBlue p-4 border-b border-slate-700">
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2">📝 แบบฟอร์มแจ้งซ่อม (Repair Request)</h2>
+                </div>
+                <div class="p-6">
+                    <form id="requestForm" onsubmit="submitRequest(event)" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div><label class="block text-sm font-medium text-slate-400 mb-1">ชื่อผู้แจ้ง (Requester)</label><input type="text" id="reqName" required class="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:border-corp-gold"></div>
+                            <div><label class="block text-sm font-medium text-slate-400 mb-1">แผนก (Department)</label><select id="reqDept" required class="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:border-corp-gold"><option value="">-- Loading... --</option></select></div>
+                            <div><label class="block text-sm font-medium text-slate-400 mb-1">เบอร์ติดต่อ (Phone)</label><input type="tel" id="reqPhone" required class="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:border-corp-gold"></div>
+                            
+                            <!-- เพิ่มช่องรหัสอุปกรณ์ -->
+                            <div><label class="block text-sm font-medium text-slate-400 mb-1">รหัสอุปกรณ์ (Equipment ID)</label><input type="text" id="reqEquipId" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:border-corp-gold" placeholder="ระบุรหัส (ถ้ามี)"></div>
+                            
+                            <div class="md:col-span-2"><label class="block text-sm font-medium text-slate-400 mb-1">ชื่ออุปกรณ์/สถานที่ (Equipment Name/Location)</label><input type="text" id="reqEquip" required class="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:border-corp-gold"></div>
+                        </div>
+                        <div><label class="block text-sm font-medium text-slate-400 mb-1">รายละเอียดปัญหา (Details)</label><textarea id="reqDetail" rows="4" required class="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:border-corp-gold"></textarea></div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-400 mb-3">ระดับความเร่งด่วน</label>
+                            <div class="flex gap-4">
+                                <label class="cursor-pointer flex items-center gap-2 p-3 rounded-lg border border-slate-600 hover:bg-slate-700 w-full justify-center has-[:checked]:border-green-500 has-[:checked]:bg-green-500/10"><input type="radio" name="urgency" value="Low" class="accent-green-500" checked><span class="text-green-400">ปกติ</span></label>
+                                <label class="cursor-pointer flex items-center gap-2 p-3 rounded-lg border border-slate-600 hover:bg-slate-700 w-full justify-center has-[:checked]:border-yellow-500 has-[:checked]:bg-yellow-500/10"><input type="radio" name="urgency" value="Medium" class="accent-yellow-500"><span class="text-yellow-400">ด่วน</span></label>
+                                <label class="cursor-pointer flex items-center gap-2 p-3 rounded-lg border border-slate-600 hover:bg-slate-700 w-full justify-center has-[:checked]:border-red-500 has-[:checked]:bg-red-500/10"><input type="radio" name="urgency" value="High" class="accent-red-500"><span class="text-red-400">ด่วนมาก</span></label>
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-gradient-to-r from-corp-gold to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-corp-blue font-bold py-3 rounded-lg shadow-lg transform hover:scale-[1.01] transition duration-200">🚀 ส่งข้อมูลแจ้งซ่อม</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: TRACK STATUS (Monthly Folders) -->
+        <div id="view-status" class="view-section hidden container mx-auto fade-in">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-white flex items-center gap-2">📂 แฟ้มเอกสารงานซ่อม <span class="text-sm font-normal text-slate-400 ml-2">(Monthly Archive)</span></h2>
+                <div class="relative w-64">
+                    <input type="text" onkeyup="renderStatusTable(this.value)" placeholder="🔍 ค้นหางานซ่อม..." class="w-full bg-slate-900 border border-slate-600 rounded-full px-4 py-2 pl-10 text-sm focus:outline-none focus:border-corp-gold shadow-lg">
+                    <span class="absolute left-3 top-2.5 text-slate-400">🔍</span>
+                </div>
+            </div>
+            
+            <!-- Folder Container -->
+            <div id="statusFolders" class="space-y-4">
+                <!-- Folders will be generated here -->
+                <div class="text-center text-slate-500 py-10 bg-slate-900/50 rounded-xl border border-dashed border-slate-700">
+                    กำลังโหลดข้อมูล...
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: DASHBOARD -->
+        <div id="view-dashboard" class="view-section hidden container mx-auto fade-in">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="bg-corp-lightBlue p-4 rounded-xl border border-slate-700 shadow-lg"> <div class="text-slate-400 text-xs font-bold">TOTAL JOBS</div> <div class="text-3xl font-bold text-white mt-1" id="kpi-total">0</div> </div>
+                <div class="bg-corp-lightBlue p-4 rounded-xl border-l-4 border-slate-500 shadow-lg"> <div class="text-slate-400 text-xs font-bold">WAITING</div> <div class="text-3xl font-bold text-slate-300 mt-1" id="kpi-waiting">0</div> </div>
+                <div class="bg-corp-lightBlue p-4 rounded-xl border-l-4 border-blue-500 shadow-lg"> <div class="text-slate-400 text-xs font-bold">PROCESSING</div> <div class="text-3xl font-bold text-blue-400 mt-1" id="kpi-processing">0</div> </div>
+                <div class="bg-corp-lightBlue p-4 rounded-xl border-l-4 border-green-500 shadow-lg"> <div class="text-slate-400 text-xs font-bold">DONE</div> <div class="text-3xl font-bold text-green-400 mt-1" id="kpi-done">0</div> </div>
+            </div>
+            <div class="bg-corp-lightBlue rounded-xl shadow-2xl border border-slate-700 overflow-hidden">
+                <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800">
+                    <h2 class="text-xl font-bold text-corp-gold">📋 จัดการงานซ่อม</h2>
+                    <input type="text" onkeyup="filterTable('adminTable', this.value)" placeholder="🔍 ค้นหางาน..." class="bg-slate-900 border border-slate-600 rounded-lg px-3 py-1 text-sm focus:outline-none focus:border-corp-gold">
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse" id="adminTable">
+                        <thead class="bg-slate-900 text-slate-400 uppercase text-xs">
+                            <tr><th class="p-4">Action</th><th class="p-4">ID</th><th class="p-4">Requester</th><th class="p-4">Equipment</th><th class="p-4">Status</th></tr>
+                        </thead>
+                        <tbody id="adminTableBody" class="text-sm divide-y divide-slate-700"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: SETTINGS -->
+        <div id="view-settings" class="view-section hidden max-w-4xl mx-auto fade-in">
+            <div class="bg-corp-lightBlue rounded-xl border border-slate-700 p-6 shadow-lg mb-6">
+                <h3 class="text-lg font-bold text-corp-gold mb-4 border-b border-slate-700 pb-2">⚙️ System Configuration</h3>
+                
+                <div class="mb-4">
+                    <label class="block text-sm text-slate-400 mb-1">Google Apps Script URL (Deployed as Web App)</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="setting-url" class="flex-1 bg-slate-900 border border-slate-600 rounded px-3 py-2 text-xs text-slate-300">
+                        <button onclick="testConnection()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded text-xs whitespace-nowrap">⚡ Test Connect</button>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1">ต้องลงท้ายด้วย /exec และเลือก Who has access เป็น Anyone</p>
+                </div>
+                
+                <div class="flex gap-4 mt-6">
+                    <button onclick="saveSystemSettings()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition">Save Config</button>
+                    <button onclick="resetConfig()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm transition">⚠️ Reset Defaults</button>
+                </div>
+            </div>
+
+            <!-- Job ID & Lists Config -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-corp-lightBlue rounded-xl border border-slate-700 p-6 shadow-lg">
+                    <h3 class="text-lg font-bold text-corp-gold mb-4 border-b border-slate-700 pb-2">🆔 Job ID Config</h3>
+                    <div class="grid grid-cols-2 gap-4 mb-2">
+                        <div><label class="text-xs text-slate-400">Prefix</label><input type="text" id="conf-prefix" class="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 uppercase"></div>
+                        <div><label class="text-xs text-slate-400">Digits</label><input type="number" id="conf-digits" class="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1"></div>
+                    </div>
+                    <div><label class="text-xs text-slate-400">Year Format</label><select id="conf-year" class="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1"><option value="YYYY">YYYY (2026)</option><option value="YY">YY (26)</option></select></div>
+                    <button onclick="saveJobConfig()" class="mt-4 w-full bg-slate-700 hover:bg-slate-600 text-white py-1 rounded text-sm">Save Job ID Format</button>
+                </div>
+                
+                <div class="bg-corp-lightBlue rounded-xl border border-slate-700 p-6 shadow-lg">
+                    <h3 class="text-lg font-bold text-corp-gold mb-4 border-b border-slate-700 pb-2">📋 Server Lists Management</h3>
+                    
+                    <div class="mb-4">
+                        <label class="text-xs text-slate-400 block mb-1">Departments</label>
+                        <div class="flex gap-2"><input id="new-dept" class="flex-1 bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs" placeholder="New Dept"><button onclick="manageListApi('manageDepartment','add', 'new-dept')" class="bg-green-600 px-2 rounded text-xs">+</button></div>
+                        <ul id="list-dept" class="h-20 overflow-y-auto bg-slate-900 border border-slate-700 p-1 mt-1 text-xs"></ul>
+                    </div>
+
+                    <div>
+                        <label class="text-xs text-slate-400 block mb-1">Technicians</label>
+                        <div class="flex gap-2"><input id="new-tech" class="flex-1 bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs" placeholder="New Tech"><button onclick="manageListApi('manageTechnician','add', 'new-tech')" class="bg-green-600 px-2 rounded text-xs">+</button></div>
+                        <ul id="list-tech" class="h-20 overflow-y-auto bg-slate-900 border border-slate-700 p-1 mt-1 text-xs"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ADMIN MODAL -->
+    <div id="adminModal" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-corp-lightBlue w-full max-w-2xl rounded-xl border border-slate-600 shadow-2xl m-4 max-h-[90vh] overflow-y-auto p-6">
+            <h3 class="text-xl font-bold text-corp-gold mb-4" id="modalTitle">Manage Job</h3>
+            <input type="hidden" id="modalJobId">
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div><label class="block text-xs text-slate-400">Status</label><select id="modalStatus" onchange="toggleCostSection()" class="w-full bg-slate-900 border border-slate-600 rounded p-2"><option value="Waiting">Waiting</option><option value="Processing">Processing</option><option value="Done">Done</option></select></div>
+                <div><label class="block text-xs text-slate-400">Tech</label><select id="modalTech" class="w-full bg-slate-900 border border-slate-600 rounded p-2"></select></div>
+            </div>
+            <div class="mb-4"><label class="block text-xs text-slate-400">Remarks</label><textarea id="modalRemark" class="w-full bg-slate-900 border border-slate-600 rounded p-2" rows="2"></textarea></div>
+            
+            <div id="costSection" class="hidden border-t border-slate-600 pt-4 bg-slate-800/50 p-4 rounded-lg mb-4">
+                <h4 class="text-green-400 font-bold mb-2 flex justify-between"><span>💰 Cost & Items</span><span id="grandTotalDisplay">0.00 ฿</span></h4>
+                <div id="itemsContainer" class="space-y-2 mb-2"></div>
+                <button type="button" onclick="addItemRow()" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded">+ Item</button>
+                <div class="mt-2"><label class="block text-xs text-slate-400">Additional Notes</label><textarea id="modalAdditionalNotes" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs" rows="1"></textarea></div>
+            </div>
+            
+            <div class="flex justify-end gap-2"><button onclick="closeModal()" class="px-4 py-2 rounded text-slate-300 hover:bg-slate-700">Cancel</button><button onclick="saveJobChanges()" class="bg-corp-gold text-corp-blue font-bold px-6 py-2 rounded">Save</button></div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIG & STATE ---
+        const DEFAULT_URL = 'https://script.google.com/macros/s/AKfycby5AmKslwMIe3KS802z7-nyAczQCuzQHjCEjdG_I5yyKCul34hmu12KAJdUgaYqKicf/exec';
+        
+        let appData = {
+            requests: [],
+            config: {
+                scriptUrl: DEFAULT_URL,
+                adminPass: 'admin123',
+                jobId: { prefix: 'MTN', year: 'YYYY', digits: 4, startNumber: 1 }
+            },
+            isAdmin: false,
+            lists: { depts: [], techs: [] }
+        };
+
+        // --- JSONP API HANDLER (GET Only) ---
+        function jsonpRequest(action, params = {}) {
+            return new Promise((resolve, reject) => {
+                const url = appData.config.scriptUrl;
+                if (!url) return reject("No Script URL");
+
+                const callbackName = 'cb_' + Math.round(100000 * Math.random());
+                const queryParams = new URLSearchParams({ action: action, callback: callbackName, ...params });
+                const script = document.createElement('script');
+                script.src = `${url}?${queryParams.toString()}`;
+                
+                window[callbackName] = function(data) {
+                    delete window[callbackName];
+                    document.body.removeChild(script);
+                    resolve(data);
+                };
+                script.onerror = function() {
+                    delete window[callbackName];
+                    document.body.removeChild(script);
+                    reject("Script Load Error (Check URL/Network)");
+                };
+                document.body.appendChild(script);
+            });
+        }
+
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSettings();
+            refreshData(true);
+            fetchLists(); 
+        });
+
+        // --- MAIN FUNCTIONS ---
+        async function submitRequest(e) {
+            e.preventDefault();
+            const equipId = document.getElementById('reqEquipId').value;
+            const equipName = document.getElementById('reqEquip').value;
+            const fullEquipmentString = equipId ? `[${equipId}] ${equipName}` : equipName;
+
+            const params = {
+                requestDate: new Date().toISOString(),
+                requesterName: document.getElementById('reqName').value,
+                positionDept: document.getElementById('reqDept').value,
+                phoneNumber: document.getElementById('reqPhone').value,
+                equipmentLocation: fullEquipmentString, 
+                problemDetails: document.getElementById('reqDetail').value,
+                urgency: document.querySelector('input[name="urgency"]:checked').value,
+                status: 'Waiting',
+                jobIdConfig: JSON.stringify(appData.config.jobId)
+            };
+
+            Swal.fire({ title: 'Sending...', didOpen: () => Swal.showLoading(), background: '#1e293b', color: '#fff' });
+            
+            try {
+                const result = await jsonpRequest('submit', params);
+                if (result.status === 'success') {
+                    document.getElementById('requestForm').reset();
+                    Swal.fire({ icon: 'success', title: 'Success', text: `Job Created: ${result.jobId}`, background: '#1e293b', color: '#fff' });
+                    refreshData(true);
+                    switchTab('status');
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (err) {
+                Swal.fire('Error', err.toString(), 'error');
+            }
+        }
+
+        async function refreshData(silent = false) {
+            if(!silent) Swal.fire({ title: 'Syncing...', didOpen: () => Swal.showLoading() });
+            
+            try {
+                const result = await jsonpRequest('fetch');
+                if (result.status === 'success') {
+                    appData.requests = result.data;
+                    renderStatusTable(); // Now renders Folders
+                    if(appData.isAdmin) renderAdminTable();
+                    if(!silent) Swal.close();
+                } else {
+                    if(!silent) Swal.fire('Error', result.message, 'error');
+                }
+            } catch(err) {
+                console.error(err);
+                if(!silent) Swal.fire('Connection Error', 'Check Settings URL', 'error');
+            }
+        }
+
+        // --- LISTS MANAGEMENT ---
+        async function fetchLists() {
+            try {
+                const d = await jsonpRequest('getDepartments');
+                if(d.status === 'success') { appData.lists.depts = d.data; renderLists(); renderDropdowns(); }
+                const t = await jsonpRequest('getTechnicians');
+                if(t.status === 'success') { appData.lists.techs = t.data; renderLists(); renderDropdowns(); }
+            } catch(e) { console.warn("List fetch failed", e); }
+        }
+
+        async function manageListApi(action, op, inputId) {
+            const name = inputId ? document.getElementById(inputId).value : arguments[3]; 
+            if(!name) return;
+            Swal.fire({ title: 'Processing...', didOpen: () => Swal.showLoading() });
+            try {
+                const res = await jsonpRequest(action, { operation: op, name: name });
+                if(res.status === 'success') {
+                    if(inputId) document.getElementById(inputId).value = '';
+                    await fetchLists();
+                    Swal.close();
+                } else { Swal.fire('Error', res.message, 'error'); }
+            } catch(e) { Swal.fire('Error', e.toString(), 'error'); }
+        }
+
+        // --- ADMIN UPDATE ---
+        async function saveJobChanges() {
+            const jobId = document.getElementById('modalJobId').value;
+            const status = document.getElementById('modalStatus').value;
+            let items = [], totalCost = 0;
+            if(status === 'Done') {
+                document.querySelectorAll('.item-row').forEach(row => {
+                    const name = row.querySelector('.item-name').value;
+                    const qty = parseFloat(row.querySelector('.item-qty').value)||0;
+                    const unitPrice = parseFloat(row.querySelector('.item-price').value)||0;
+                    const total = qty * unitPrice;
+                    if(name) { items.push({name, quantity: qty, unitPrice, total}); totalCost += total; }
+                });
+            }
+            const params = {
+                jobId: jobId,
+                status: status,
+                technician: document.getElementById('modalTech').value,
+                adminRemarks: document.getElementById('modalRemark').value,
+                cost: totalCost,
+                itemsData: JSON.stringify(items),
+                itemsSummary: items.map(i => `${i.name} (${i.quantity})`).join(', '),
+                additionalNotes: document.getElementById('modalAdditionalNotes').value
+            };
+            if(status === 'Processing') params.acceptedDate = new Date().toISOString();
+            if(status === 'Done') params.completedDate = new Date().toISOString();
+
+            Swal.fire({ title: 'Updating...', didOpen: () => Swal.showLoading() });
+            try {
+                const res = await jsonpRequest('update', params);
+                if(res.status === 'success') {
+                    closeModal();
+                    refreshData(true);
+                    Swal.fire('Success', 'Updated', 'success');
+                } else { Swal.fire('Error', res.message, 'error'); }
+            } catch(e) { Swal.fire('Error', e.toString(), 'error'); }
+        }
+
+        // --- UI HELPERS ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.replace('text-corp-gold', 'text-slate-400'));
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabId}`).classList.replace('text-slate-400', 'text-corp-gold');
+            if(tabId === 'dashboard') updateDashboard();
+        }
+
+        // --- NEW: RENDER MONTHLY FOLDERS ---
+        function renderStatusTable(query = '') {
+            const container = document.getElementById('statusFolders');
+            container.innerHTML = '';
+            
+            // Filter Data
+            const filtered = appData.requests.filter(req => {
+                const text = (req.jobID + req.equipmentLocation + req.problemDetails + req.requesterName).toLowerCase();
+                return text.includes(query.toLowerCase());
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="text-center text-slate-500 py-10 bg-slate-900/50 rounded-xl border border-dashed border-slate-700">ไม่พบข้อมูล</div>';
+                return;
+            }
+
+            // Group by Month (YYYY-MM)
+            const groups = {};
+            filtered.forEach(req => {
+                const d = new Date(req.requestDate);
+                const monthKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}`; // YYYY-MM
+                if(!groups[monthKey]) groups[monthKey] = [];
+                groups[monthKey].push(req);
+            });
+
+            // Sort Months Descending
+            const sortedMonths = Object.keys(groups).sort().reverse();
+
+            sortedMonths.forEach(monthKey => {
+                const [y, m] = monthKey.split('-');
+                const monthName = new Date(y, m-1).toLocaleString('th-TH', { month: 'long', year: 'numeric' });
+                const items = groups[monthKey];
+                const isOpen = query !== '' || monthKey === sortedMonths[0]; // Auto open first month or search results
+
+                const folderId = `folder-${monthKey}`;
+                
+                const folderHtml = `
+                    <div class="bg-slate-800 rounded-lg overflow-hidden shadow-lg border border-slate-700 transition hover:border-slate-600">
+                        <div onclick="toggleFolder('${folderId}')" class="flex justify-between items-center p-4 cursor-pointer hover:bg-slate-750 transition select-none">
+                            <div class="flex items-center gap-3">
+                                <span class="text-2xl">📁</span>
+                                <span class="font-bold text-lg text-white">${monthName}</span>
+                                <span class="bg-slate-600 text-xs px-2 py-1 rounded-full text-slate-200">${items.length} รายการ</span>
+                            </div>
+                            <span id="icon-${folderId}" class="text-slate-400 transform transition ${isOpen ? 'rotate-180' : ''}">▼</span>
+                        </div>
+                        <div id="${folderId}" class="${isOpen ? '' : 'hidden'} bg-slate-900/50 border-t border-slate-700">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse text-sm">
+                                    <thead class="bg-slate-900 text-slate-400 uppercase text-xs">
+                                        <tr><th class="p-3">Job ID</th><th class="p-3">Date</th><th class="p-3">Equipment</th><th class="p-3">Details</th><th class="p-3">Status</th><th class="p-3">Tech</th></tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-800 text-slate-300">
+                                        ${items.map(req => {
+                                            const statusClass = req.status === 'Done' ? 'text-green-400' : req.status === 'Processing' ? 'text-blue-400' : 'text-slate-400';
+                                            const dateStr = new Date(req.requestDate).toLocaleDateString('th-TH', {day:'numeric', month:'short'});
+                                            return `<tr class="hover:bg-slate-800/50">
+                                                <td class="p-3 font-mono text-corp-gold whitespace-nowrap">${req.jobID}</td>
+                                                <td class="p-3 whitespace-nowrap">${dateStr}</td>
+                                                <td class="p-3 font-medium">${req.equipmentLocation}</td>
+                                                <td class="p-3 text-slate-400 truncate max-w-xs" title="${req.problemDetails}">${req.problemDetails}</td>
+                                                <td class="p-3 font-bold ${statusClass}">${req.status}</td>
+                                                <td class="p-3">${req.technician}</td>
+                                            </tr>`;
+                                        }).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', folderHtml);
+            });
+        }
+
+        function toggleFolder(id) {
+            const content = document.getElementById(id);
+            const icon = document.getElementById(`icon-${id}`);
+            content.classList.toggle('hidden');
+            icon.classList.toggle('rotate-180');
+        }
+
+        function renderAdminTable() {
+             const tbody = document.getElementById('adminTableBody');
+             tbody.innerHTML = '';
+             appData.requests.forEach(req => {
+                 tbody.innerHTML += `<tr class="border-b border-slate-700 hover:bg-slate-800">
+                    <td class="p-4"><button onclick="openAdminModal('${req.jobID}')" class="bg-blue-600 px-2 rounded text-xs py-1 hover:bg-blue-500">Edit</button></td>
+                    <td class="p-4 text-xs font-mono">${req.jobID}</td>
+                    <td class="p-4 text-sm">${req.requesterName}</td>
+                    <td class="p-4 text-sm">${req.equipmentLocation}</td>
+                    <td class="p-4 text-xs">${req.status}</td>
+                </tr>`;
+             });
+        }
+
+        function updateDashboard() {
+            renderAdminTable();
+            document.getElementById('kpi-total').innerText = appData.requests.length;
+            document.getElementById('kpi-waiting').innerText = appData.requests.filter(r => r.status === 'Waiting').length;
+            document.getElementById('kpi-processing').innerText = appData.requests.filter(r => r.status === 'Processing').length;
+            document.getElementById('kpi-done').innerText = appData.requests.filter(r => r.status === 'Done').length;
+        }
+
+        function openAdminModal(id) {
+            const job = appData.requests.find(r => r.jobID === id);
+            if(!job) return;
+            document.getElementById('modalJobId').value = id;
+            document.getElementById('modalStatus').value = job.status;
+            document.getElementById('modalTech').value = job.technician || '';
+            document.getElementById('modalRemark').value = job.adminRemarks || '';
+            document.getElementById('modalAdditionalNotes').value = job.additionalNotes || '';
+            
+            document.getElementById('itemsContainer').innerHTML = '';
+            if(job.itemsData) {
+                try {
+                    const items = JSON.parse(job.itemsData);
+                    items.forEach(i => addItemRow(i.name, i.quantity, i.unitPrice));
+                } catch(e) {}
+            } else {
+                addItemRow();
+            }
+            toggleCostSection();
+            document.getElementById('adminModal').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('adminModal').classList.add('hidden'); }
+        function toggleCostSection() { document.getElementById('costSection').style.display = document.getElementById('modalStatus').value === 'Done' ? 'block' : 'none'; }
+        
+        function addItemRow(n='', q=1, p=0) {
+            const div = document.createElement('div'); div.className = 'grid grid-cols-6 gap-2 item-row';
+            div.innerHTML = `<input class="col-span-3 bg-slate-900 border border-slate-600 rounded px-1 item-name" value="${n}" placeholder="Item"><input type="number" class="col-span-1 bg-slate-900 border border-slate-600 rounded px-1 item-qty" value="${q}" onchange="calcTotal()"><input type="number" class="col-span-1 bg-slate-900 border border-slate-600 rounded px-1 item-price" value="${p}" onchange="calcTotal()"><button onclick="this.parentElement.remove();calcTotal()" class="text-red-400">x</button>`;
+            document.getElementById('itemsContainer').appendChild(div); calcTotal();
+        }
+        function calcTotal() {
+            let t = 0; document.querySelectorAll('.item-row').forEach(r => t += (r.querySelector('.item-qty').value * r.querySelector('.item-price').value));
+            document.getElementById('grandTotalDisplay').innerText = t.toFixed(2) + ' ฿';
+        }
+
+        // --- SETTINGS & LISTS RENDERING ---
+        function renderLists() {
+            document.getElementById('list-dept').innerHTML = appData.lists.depts.map(x => `<li class="flex justify-between border-b border-slate-700 p-1"><span>${x}</span><button onclick="manageListApi('manageDepartment','delete','','${x}')" class="text-red-400">x</button></li>`).join('');
+            document.getElementById('list-tech').innerHTML = appData.lists.techs.map(x => `<li class="flex justify-between border-b border-slate-700 p-1"><span>${x}</span><button onclick="manageListApi('manageTechnician','delete','','${x}')" class="text-red-400">x</button></li>`).join('');
+        }
+        function renderDropdowns() {
+            const d = document.getElementById('reqDept'); 
+            d.innerHTML = '<option value="">-- Select --</option>' + appData.lists.depts.map(x => `<option>${x}</option>`).join('');
+            const t = document.getElementById('modalTech'); 
+            t.innerHTML = '<option value="">-- Select --</option>' + appData.lists.techs.map(x => `<option>${x}</option>`).join('');
+        }
+
+        function loadSettings() {
+            const savedConfig = localStorage.getItem('maint_config');
+            if(savedConfig) {
+                try {
+                    const parsed = JSON.parse(savedConfig);
+                    if(parsed.scriptUrl) appData.config.scriptUrl = parsed.scriptUrl;
+                    if(parsed.adminPass) appData.config.adminPass = parsed.adminPass; // Check exist
+                    if(parsed.jobId) appData.config.jobId = parsed.jobId;
+                } catch(e) {
+                    console.error("Config load error", e);
+                }
+            }
+            // Sync UI
+            document.getElementById('setting-url').value = appData.config.scriptUrl;
+            document.getElementById('conf-prefix').value = appData.config.jobId.prefix;
+            document.getElementById('conf-digits').value = appData.config.jobId.digits;
+            document.getElementById('conf-year').value = appData.config.jobId.year;
+        }
+        function saveSystemSettings() {
+            appData.config.scriptUrl = document.getElementById('setting-url').value;
+            localStorage.setItem('maint_config', JSON.stringify(appData.config));
+            Swal.fire('Saved', 'Config Updated', 'success');
+            refreshData();
+        }
+        function saveJobConfig() {
+            appData.config.jobId.prefix = document.getElementById('conf-prefix').value;
+            appData.config.jobId.digits = parseInt(document.getElementById('conf-digits').value);
+            appData.config.jobId.year = document.getElementById('conf-year').value;
+            localStorage.setItem('maint_config', JSON.stringify(appData.config));
+            Swal.fire('Saved', 'ID Config Updated', 'success');
+        }
+        function resetConfig() { localStorage.removeItem('maint_config'); location.reload(); }
+        
+        async function testConnection() {
+            Swal.fire({ title: 'Testing...', didOpen: () => Swal.showLoading() });
+            try {
+                const res = await jsonpRequest('fetch');
+                if(res.status === 'success') Swal.fire('Connected', 'Data found: ' + res.data.length, 'success');
+                else Swal.fire('Failed', res.message, 'error');
+            } catch(e) { Swal.fire('Error', 'Connect failed', 'error'); }
+        }
+
+        async function showLoginModal() {
+            const { value: p } = await Swal.fire({ 
+                title: 'Admin Access', 
+                input: 'password', 
+                inputLabel: 'Enter Password', 
+                inputPlaceholder: 'Default: admin123',
+                background: '#1e293b', 
+                color: '#fff',
+                confirmButtonColor: '#f59e0b',
+                showCancelButton: true
+            });
+
+            if (!p) return; // Cancelled
+
+            if (p === appData.config.adminPass) {
+                appData.isAdmin = true;
+                document.querySelectorAll('.admin-only').forEach(e => e.classList.remove('hidden'));
+                document.getElementById('btnLogin').classList.add('hidden');
+                document.getElementById('btnLogout').classList.remove('hidden');
+                switchTab('dashboard');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Welcome Admin',
+                    text: 'Logged in successfully',
+                    timer: 1500,
+                    showConfirmButton: false,
+                    background: '#1e293b',
+                    color: '#fff'
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Access Denied',
+                    text: 'Incorrect Password',
+                    background: '#1e293b',
+                    color: '#fff'
+                });
+            }
+        }
+        function logout() { location.reload(); }
+        function filterTable(id, q) { 
+            const tr = document.getElementById(id).getElementsByTagName('tr');
+            for(let i=1;i<tr.length;i++) tr[i].style.display = tr[i].innerText.toUpperCase().includes(q.toUpperCase()) ? '' : 'none';
+        }
+    </script>
+</body>
+</html>
