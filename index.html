@@ -405,7 +405,7 @@
     async function callApi(act, params = {}) {
         if (!appData.cfg.apiUrl) throw new Error('ไม่พบ URL API');
         const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 30000); // 30s timeout
+        const timer = setTimeout(() => ctrl.abort(), 120000); // s timeout
         try {
             const res = await fetch(appData.cfg.apiUrl, {
                 method: 'POST',
