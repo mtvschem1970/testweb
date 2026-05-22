@@ -36,8 +36,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 
 /* ─── LAYOUT ─────────────────────────────── */
 .app{display:flex;height:100vh;overflow:hidden}
-
-/* SIDEBAR */
 .sidebar{width:220px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;transition:width .2s}
 .sidebar-logo{padding:20px 16px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
 .logo-icon{width:32px;height:32px;background:var(--accent);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
@@ -52,10 +50,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .sidebar-footer{padding:12px 8px;border-top:1px solid var(--border)}
 .status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;box-shadow:0 0 6px var(--green)}
 
-/* MAIN */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-
-/* TOPBAR */
 .topbar{height:52px;flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px}
 .topbar-title{font-size:14px;font-weight:600;color:var(--text)}
 .topbar-subtitle{font-size:12px;color:var(--text3);margin-left:4px}
@@ -74,12 +69,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .btn-success:hover{background:var(--green);color:#fff}
 .btn-sm{padding:5px 10px;font-size:11px}
 
-/* CONTENT */
 .content{flex:1;overflow-y:auto;padding:20px}
 .panel{display:none}
 .panel.active{display:block}
 
-/* STATS ROW */
+/* STATS & CARDS */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
 .stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;position:relative;overflow:hidden}
 .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
@@ -91,7 +85,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .stat-value{font-size:26px;font-weight:600;color:var(--text);font-family:var(--mono);line-height:1}
 .stat-sub{font-size:11px;color:var(--text3);margin-top:4px}
 
-/* CARDS & FORMS */
 .two-col{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg)}
 .card-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
@@ -125,7 +118,7 @@ tbody td{padding:10px 12px;font-size:13px;vertical-align:middle}
 .badge-out{background:var(--red-dim);color:var(--red)}
 .code{font-family:var(--mono);font-size:12px;color:var(--text2)}
 
-/* 2D MAP ⭐️ อัปเดตใหม่ */
+/* 2D MAP */
 .map-toolbar{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .map-search-wrap{position:relative;flex:1;min-width:200px}
 .map-search-wrap input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:7px 10px 7px 30px;border-radius:var(--radius);font-size:13px;outline:none;}
@@ -133,7 +126,6 @@ tbody td{padding:10px 12px;font-size:13px;vertical-align:middle}
 .map-search-ico{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;}
 #roomCanvas{position:relative;background:var(--bg);background-image:radial-gradient(var(--border) 1px,transparent 1px);background-size:20px 20px;height:650px;overflow:hidden}
 
-/* ⭐️ ปรับให้ย่อขยายได้ (resize: both) */
 .shelf-box{position:absolute;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);user-select:none;transition:border-color .2s,box-shadow .2s,transform .15s;display:flex;flex-direction:column;resize:both;overflow:hidden;min-width:140px;min-height:100px}
 .shelf-box:hover{border-color:var(--border2)}
 
@@ -141,15 +133,18 @@ tbody td{padding:10px 12px;font-size:13px;vertical-align:middle}
 .drag-handle:active{cursor:grabbing}
 .shelf-title{font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px}
 .shelf-title .dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0}
-.shelf-del{background:none;border:none;color:var(--text3);cursor:pointer;padding:2px;font-size:12px;transition:color .15s}
+
+/* ⭐️ อัปเดตปุ่มในหัวข้อตู้ */
+.shelf-actions { display: flex; gap: 6px; align-items: center; }
+.shelf-btn{background:none;border:none;color:var(--text3);cursor:pointer;padding:2px;font-size:13px;line-height:1;transition:color .15s}
+.shelf-btn:hover{color:var(--accent)}
+.shelf-del{background:none;border:none;color:var(--text3);cursor:pointer;padding:2px;font-size:12px;line-height:1;transition:color .15s}
 .shelf-del:hover{color:var(--red)}
 
-/* ⭐️ ภาพจำลองแบ่งชั้น */
 .shelf-levels{flex:1;display:flex;flex-direction:column;position:relative}
 .shelf-level-row{flex:1;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);opacity:0.6;font-weight:500;letter-spacing:0.05em}
 .shelf-level-row:last-child{border-bottom:none}
 
-/* ⭐️ แสงสีขาวตอนค้นหาเจอ */
 .highlight-shelf{border-color:#ffffff!important;box-shadow:0 0 15px rgba(255,255,255,0.7), inset 0 0 25px rgba(255,255,255,0.3)!important;transform:scale(1.02);z-index:50!important}
 .search-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:12px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:10}
 .highlight-shelf .search-overlay{opacity:1;pointer-events:auto;backdrop-filter:blur(2px)}
@@ -157,7 +152,6 @@ tbody td{padding:10px 12px;font-size:13px;vertical-align:middle}
 .loc-qty{color:#a7f3d0;font-size:12px;font-family:var(--mono);font-weight:600}
 .loc-sub{font-size:11px;color:#cbd5e1;margin-top:6px}
 
-/* TOAST & LOADERS */
 #toast{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
 .toast-item{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:12px 16px;border-radius:var(--radius-lg);font-size:13px;min-width:240px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:slideIn .2s ease}
 @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
@@ -303,16 +297,17 @@ tbody td{padding:10px 12px;font-size:13px;vertical-align:middle}
           <div class="map-toolbar">
             <div class="map-search-wrap">
               <span class="map-search-ico">🔍</span>
-              <input type="text" id="searchMapInput" onkeyup="searchAndHighlight()" placeholder="พิมพ์ตำแหน่ง หรือ ชื่ออะไหล่ เพื่อค้นหา (ค้นหาปุ๊บไฟสว่างทันที)...">
+              <input type="text" id="searchMapInput" onkeyup="searchAndHighlight()" placeholder="พิมพ์ตำแหน่ง หรือ ชื่ออะไหล่ เพื่อค้นหาพิกัดตู้...">
             </div>
-            <button class="btn btn-success btn-sm" onclick="addNewShelf()">＋ เพิ่มชั้นวางใหม่</button>
-            <button class="btn btn-ghost btn-sm" onclick="resetLayout()">↺ ล้างค่าเริ่มต้น</button>
+            <button class="btn btn-success btn-sm" onclick="addNewShelf()">＋ เพิ่มตู้ใหม่</button>
+            <button class="btn btn-ghost btn-sm" onclick="resetLayout()">↺ ล้างพิกัดตู้ทั้งหมด</button>
           </div>
           <div id="roomCanvas"></div>
           <div style="padding:8px 16px;border-top:1px solid var(--border);display:flex;align-items:center;font-size:11px;color:var(--text3);justify-content:space-between">
             <div style="display:flex;gap:12px">
-              <span>💡 กดลากที่หัวข้อเพื่อย้ายตำแหน่ง (Snap 20px)</span>
-              <span>↔ นำเมาส์ชี้มุมขวาล่างของตู้เพื่อย่อ-ขยายขนาดตู้ได้</span>
+              <span>💡 คลิกค้างที่แถบชื่อตู้เพื่อลากย้าย (Snap 20px)</span>
+              <span>↔ ลากที่มุมขวาล่างของตู้เพื่อปรับขนาดความกว้าง/ยาว</span>
+              <span>⧉ กดเพื่อคัดลอกตู้ขนาดเดิมเป๊ะๆ</span>
             </div>
           </div>
         </div>
@@ -340,12 +335,12 @@ tbody td{padding:10px 12px;font-size:13px;vertical-align:middle}
 <div id="toast"></div>
 
 <script>
+// ⚠️ ใส่ URL ของคุณ
 const WEB_APP_URL="https://script.google.com/macros/s/AKfycby9m1VsobxkvJwug77jO8Nnx-1RtSY3PFl-j1laMvlMXgRtm6bxXGjFF5XFmF6wvTvlwA/exec";
 
 let globalInventory=[];
 let globalLogs=[];
-// ข้อมูลห้องจะเก็บ x, y, width(w), height(h) และจำนวนชั้น (levels)
-let roomLayout=JSON.parse(localStorage.getItem('wmsLayout2'))||{}; 
+let roomLayout=JSON.parse(localStorage.getItem('wmsLayout3'))||{}; 
 let currentPanel='dashboard';
 let invFilteredData=[];
 
@@ -369,7 +364,47 @@ function toast(msg,type='ok'){
   setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(()=>el.remove(),300)},3000);
 }
 
-// ─── LOAD DATA ───────────────────────────────────────────────
+// ⭐️ ระบบจำลองข้อมูลเยอะๆ ให้หน้าเว็บอัตโนมัติ 
+function generateDummyData() {
+  const zones = ['A', 'B', 'C', 'D', 'E'];
+  const types = ['น็อต M4', 'วาล์วทองเหลือง', 'สวิตช์ปุ่มกด', 'มอเตอร์ 12V', 'ลูกปืน', 'เซ็นเซอร์แสง', 'โอริง', 'สายไฟ 2mm', 'ข้อต่อ PVC'];
+  const brands = ['(แท้)', '(เทียม)', 'SMC', 'Omron', 'Panasonic', 'Mitsubishi'];
+
+  let mockItems = [];
+  for(let i=1; i<=100; i++) {
+    const z = zones[Math.floor(Math.random()*zones.length)];
+    const cab = Math.floor(Math.random()*5)+1; // ตู้เบอร์ 1-5
+    const lvl = Math.floor(Math.random()*6)+1; // ชั้น 1-6
+    
+    // สร้างตำแหน่ง (ตัวอย่างเช่น "ตู้ A-1 ชั้น 3")
+    const loc = `ตู้ ${z}-${cab} ชั้น ${lvl}`;
+    
+    const t = types[Math.floor(Math.random()*types.length)];
+    const b = brands[Math.floor(Math.random()*brands.length)];
+    const qty = Math.floor(Math.random()*80); // สุ่มจำนวน 0-79
+
+    mockItems.push({
+      "รหัสอะไหล่ (ID)": `TEST-${i.toString().padStart(3,'0')}`,
+      "ชื่ออะไหล่ (Name)": `${t} ${b} รุ่นทดสอบ`,
+      "ตำแหน่ง (Location)": loc,
+      "จำนวนคงเหลือ (Qty)": qty
+    });
+  }
+  
+  // สร้างตู้แผนผังจำลองให้ตรงกับข้อมูลที่สุ่มขึ้นมา
+  zones.forEach(z => {
+      for(let i=1; i<=3; i++) {
+          let name = `ตู้ ${z}-${i}`;
+          if(!roomLayout[name]) {
+              roomLayout[name] = { x: (zones.indexOf(z) * 200) + 20, y: (i * 180) - 140, w: 160, h: 140, levels: 6 };
+          }
+      }
+  });
+  localStorage.setItem('wmsLayout3', JSON.stringify(roomLayout));
+
+  return mockItems;
+}
+
 async function loadData(){
   const btn=document.getElementById('refreshBtn');
   const ico=document.getElementById('refreshIco');
@@ -380,6 +415,11 @@ async function loadData(){
     const data=await res.json();
     globalInventory=data.inventory||[];
     globalLogs=data.logs||[];
+
+    // ⭐️ เพิ่มข้อมูลจำลอง 100 รายการ ต่อท้ายข้อมูลจริง
+    const dummyData = generateDummyData();
+    globalInventory = [...globalInventory, ...dummyData];
+    
     invFilteredData=[...globalInventory];
 
     renderDashboard();
@@ -399,7 +439,6 @@ async function loadData(){
   }
 }
 
-// Data Helpers
 function getId(i){return i["รหัสอะไหล่ (ID)"]||i["ID"]||''}
 function getName(i){return i["ชื่ออะไหล่ (Name)"]||i["Name"]||''}
 function getLoc(i){return String(i["ตำแหน่ง (Location)"]||i["Location"]||'-')}
@@ -421,19 +460,24 @@ function renderDashboard(){
 
   const tbody=document.getElementById('lowStockBody');
   if(!low.length){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text3)">✓ ไม่มีรายการใกล้หมด</td></tr>';return;}
-  tbody.innerHTML=low.map(i=>`<tr><td class="code">${getId(i)}</td><td style="font-weight:500">${getName(i)}</td><td><span class="badge badge-loc">${getLoc(i)}</span></td><td><span class="badge badge-danger">${getQty(i)}</span></td></tr>`).join('');
+  // โชว์แค่ 10 รายการในหน้า Dashboard กันหน้าเว็บยาวเกิน
+  tbody.innerHTML=low.slice(0,10).map(i=>`<tr><td class="code">${getId(i)}</td><td style="font-weight:500">${getName(i)}</td><td><span class="badge badge-loc">${getLoc(i)}</span></td><td><span class="badge badge-danger">${getQty(i)}</span></td></tr>`).join('');
 }
 
 function renderInventory(){
   const tbody=document.getElementById('inventoryBody');
   if(!globalInventory.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text3)">ไม่มีข้อมูล</td></tr>';return;}
-  tbody.innerHTML=invFilteredData.map(i=>{
+  
+  let html = '';
+  // โชว์ทีละเยอะๆ ระวังค้าง เลยให้ใช้ innerHTML ทีเดียว
+  invFilteredData.forEach(i=>{
     const id=getId(i),name=getName(i),loc=getLoc(i),qty=getQty(i);
     const qtyBadge=qty<=0?'badge-danger':qty<=5?'badge-warn':'badge-ok';
     const status=qty<=0?'หมด':qty<=5?'ใกล้หมด':'ปกติ';
     const statBadge=qty<=0?'badge-danger':qty<=5?'badge-warn':'badge-ok';
-    return `<tr><td class="code">${id}</td><td style="font-weight:500;color:var(--text)">${name}</td><td><span class="badge badge-loc">${loc}</span></td><td style="text-align:right"><span class="badge ${qtyBadge}">${qty}</span></td><td><span class="badge ${statBadge}">${status}</span></td></tr>`;
-  }).join('');
+    html += `<tr><td class="code">${id}</td><td style="font-weight:500;color:var(--text)">${name}</td><td><span class="badge badge-loc">${loc}</span></td><td style="text-align:right"><span class="badge ${qtyBadge}">${qty}</span></td><td><span class="badge ${statBadge}">${status}</span></td></tr>`;
+  });
+  tbody.innerHTML = html;
   document.getElementById('invCount').textContent=invFilteredData.length+' รายการ';
 }
 
@@ -446,12 +490,15 @@ function filterInventory(){
 function renderTxInventory(){
   const tbody=document.getElementById('txInventoryBody');
   if(!globalInventory.length){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text3)">ไม่มีข้อมูล</td></tr>';return;}
-  tbody.innerHTML=globalInventory.map(i=>{
+  
+  let html = '';
+  // จำกัดแสดงผลตอนทำรายการแค่ของที่มีจริง
+  globalInventory.slice(0,200).forEach(i=>{
     const qty=getQty(i);
     const qtyBadge=qty<=0?'badge-danger':qty<=5?'badge-warn':'badge-ok';
-    return `<tr><td class="code">${getId(i)}</td><td style="font-weight:500">${getName(i)}</td><td><span class="badge badge-loc">${getLoc(i)}</span></td><td style="text-align:right"><span class="badge ${qtyBadge}">${qty}</span></td></tr>`;
-  }).join('');
-  document.getElementById('invCount').textContent=globalInventory.length+' รายการ';
+    html += `<tr><td class="code">${getId(i)}</td><td style="font-weight:500">${getName(i)}</td><td><span class="badge badge-loc">${getLoc(i)}</span></td><td style="text-align:right"><span class="badge ${qtyBadge}">${qty}</span></td></tr>`;
+  });
+  tbody.innerHTML = html;
 }
 
 function populateSelect(){
@@ -480,6 +527,13 @@ function toggleVendor(){
 async function handleTransaction(event){
   event.preventDefault();
   const id=document.getElementById('partSelect').value;
+  
+  // ป้องกันการยิง MOCK ไปลง Google Sheets จริงๆ จะได้ไม่พัง
+  if(id.startsWith('TEST-')) {
+      alert("อะไหล่นี้เป็นข้อมูลจำลองสำหรับเทสระบบแผนผัง ไม่สามารถบันทึกลง Google Sheets จริงได้ครับ\nให้เลือกอะไหล่ SP-001 หรือของที่คุณสร้างเองเพื่อเทสการเซฟแทน");
+      return;
+  }
+
   const action=document.querySelector('input[name="actionType"]:checked').value;
   const qty=document.getElementById('transQty').value;
   const note=document.getElementById('transNote').value;
@@ -500,7 +554,7 @@ async function handleTransaction(event){
   btn.disabled=false;btn.textContent='บันทึกรายการ';
 }
 
-// ─── 2D MAP & HIGHLIGHT ──────────────────────────────────────
+// ─── MAP SYSTEM ─────────────────────────────────────────────
 function render2DMap(){
   const canvas=document.getElementById('roomCanvas');
   canvas.innerHTML='';
@@ -509,28 +563,28 @@ function render2DMap(){
   let newX=20,newY=20;
 
   allShelfNames.forEach(shelfName=>{
-    // ดึงค่าเก่า หรือตั้งค่า Default ถ้าเพิ่งสร้าง (มี w: 180, h: 140, levels: x)
-    const pos=roomLayout[shelfName]||{x:newX,y:newY,w:180,h:140,levels:4};
-    if(!roomLayout[shelfName]){newX+=200;if(newX>780){newX=20;newY+=160;}}
+    const pos=roomLayout[shelfName]||{x:newX,y:newY,w:160,h:140,levels:4};
+    if(!roomLayout[shelfName]){newX+=180;if(newX>780){newX=20;newY+=160;}}
 
     const lvls = pos.levels || 4;
     let levelHtml = '';
-    // สร้างเส้นแบ่งชั้น (วาดจากชั้นบนสุดลงล่าง)
     for(let i=lvls; i>=1; i--) {
         levelHtml += `<div class="shelf-level-row">ชั้น ${i}</div>`;
     }
 
     const div=document.createElement('div');
     div.className='shelf-box';
-    // บังคับกำหนด width / height ตามที่บันทึกไว้เพื่อให้ resize ได้
-    div.style.cssText=`left:${pos.x}px; top:${pos.y}px; width:${pos.w||180}px; height:${pos.h||140}px;`;
+    div.style.cssText=`left:${pos.x}px; top:${pos.y}px; width:${pos.w}px; height:${pos.h}px;`;
     div.dataset.name=shelfName;
     
-    // โครงสร้างภายในตู้ (ซ่อน item แล้ว, โชว์เส้นแบ่งชั้นแทน)
+    // ⭐️ เพิ่มปุ่ม Clone (⧉)
     div.innerHTML=`
       <div class="drag-handle">
         <span class="shelf-title"><span class="dot"></span>${shelfName}</span>
-        <button class="shelf-del" onclick="deleteShelf('${shelfName.replace(/'/g,"\\'")}')">✕</button>
+        <div class="shelf-actions">
+          <button class="shelf-btn" onclick="cloneShelf('${shelfName.replace(/'/g,"\\'")}')" title="คัดลอกตู้นี้">⧉</button>
+          <button class="shelf-del" onclick="deleteShelf('${shelfName.replace(/'/g,"\\'")}')" title="ลบตู้">✕</button>
+        </div>
       </div>
       <div class="shelf-levels">${levelHtml}</div>
       <div class="search-overlay" id="overlay-${shelfName.replace(/\s/g,'')}"></div>`;
@@ -539,11 +593,10 @@ function render2DMap(){
   });
 
   initDraggable();
-  initResizeObserver(); // ตัวจับเมื่อมีการลากขยายตู้
-  searchAndHighlight(); // สั่งรันเผื่อมีคำค้นหาค้างอยู่
+  initResizeObserver(); 
+  searchAndHighlight(); 
 }
 
-// ⭐️ ระบบลากจัดตำแหน่ง (Snap 20px)
 function initDraggable(){
   const canvas=document.getElementById('roomCanvas');
   const GRID=20;
@@ -551,7 +604,7 @@ function initDraggable(){
 
   canvas.onmousedown=e=>{
     const handle=e.target.closest('.drag-handle');
-    if(handle&&!e.target.closest('.shelf-del')){
+    if(handle&&!e.target.closest('.shelf-actions')){
       dragging=true;
       box=handle.closest('.shelf-box');
       box.style.zIndex=1000;
@@ -587,7 +640,6 @@ function initDraggable(){
   },{once:false});
 }
 
-// ⭐️ ระบบจับการขยายตู้แล้วเซฟอัตโนมัติ
 let resizeObserver;
 function initResizeObserver() {
     if(resizeObserver) resizeObserver.disconnect();
@@ -604,7 +656,7 @@ function initResizeObserver() {
                 }
             }
         }
-        if(changed) localStorage.setItem('wmsLayout2',JSON.stringify(roomLayout));
+        if(changed) localStorage.setItem('wmsLayout3',JSON.stringify(roomLayout));
     });
     document.querySelectorAll('.shelf-box').forEach(box => resizeObserver.observe(box));
 }
@@ -617,52 +669,43 @@ function saveLayout(){
         roomLayout[b.dataset.name].y = b.offsetTop;
       }
   });
-  localStorage.setItem('wmsLayout2',JSON.stringify(roomLayout));
+  localStorage.setItem('wmsLayout3',JSON.stringify(roomLayout));
 }
 
-// ⭐️ ระบบค้นหา ฉายแสงสีขาว และบอกชั้น
 function searchAndHighlight(){
   const kw=document.getElementById('searchMapInput').value.toLowerCase().trim();
   
-  // ล้างการเรืองแสงทั้งหมดออกก่อน
   document.querySelectorAll('.shelf-box').forEach(b=>{
       b.classList.remove('highlight-shelf');
       b.querySelector('.search-overlay').innerHTML = '';
   });
-  
   if(!kw) return;
 
   const shelfMatches = {};
 
   globalInventory.forEach(item=>{
     const id=getId(item).toLowerCase(), name=getName(item).toLowerCase(), loc=getLoc(item);
-    
-    // ถ้าคำค้นหาตรงกับ รหัส หรือ ชื่อ หรือ ตำแหน่ง
     if(id.includes(kw) || name.includes(kw) || loc.toLowerCase().includes(kw)){
       
-      // วิ่งหาว่าในบรรดาตู้ทั้งหมดที่เราสร้างไว้ ตู้ไหนที่ชื่อไปตรงกับ "ตำแหน่ง" ของอะไหล่ชิ้นนี้
       let targetShelf = Object.keys(roomLayout).find(k => loc.toLowerCase().includes(k.toLowerCase()));
       
       if(targetShelf) {
           if(!shelfMatches[targetShelf]) shelfMatches[targetShelf] = [];
           shelfMatches[targetShelf].push({
-              fullLocation: loc, // ข้อมูลชั้นที่เราพิมพ์ไว้เป๊ะๆ (เช่น ตู้ A ชั้น 3)
+              fullLocation: loc,
               qty: getQty(item)
           });
       }
     }
   });
 
-  // เปิดไฟสว่างให้ตู้ที่เจอ พร้อมแสดงข้อความ
   Object.keys(shelfMatches).forEach(shelfName => {
       const box = document.querySelector(`.shelf-box[data-name="${shelfName}"]`);
       if(box){
           box.classList.add('highlight-shelf');
           const overlay = box.querySelector('.search-overlay');
-          
           let html = `<div style="font-size:12px;margin-bottom:6px;font-weight:600;letter-spacing:1px">📍 เป้าหมายอยู่:</div>`;
           
-          // โชว์แค่ 2 ตำแหน่งแรกในตู้นี้ที่ค้นเจอ กันมันล้น
           shelfMatches[shelfName].slice(0,2).forEach(m => {
               html += `
                   <div class="loc-badge">${m.fullLocation}</div>
@@ -673,7 +716,6 @@ function searchAndHighlight(){
           if(shelfMatches[shelfName].length > 2) {
               html += `<div class="loc-sub">และตำแหน่งอื่นอีก ${shelfMatches[shelfName].length - 2} จุด</div>`;
           }
-          
           overlay.innerHTML = html;
       }
   });
@@ -682,38 +724,59 @@ function searchAndHighlight(){
 function handleGlobalSearch(){
   const kw=document.getElementById('globalSearch').value;
   if(!kw)return;
-  // วิ่งไปหน้าแผนผังห้องและค้นหาอัตโนมัติ
   document.querySelectorAll('.nav-item').forEach(b=>{ if(b.textContent.includes('แผนผัง'))b.click(); });
   document.getElementById('searchMapInput').value=kw;
   searchAndHighlight();
 }
 
 function addNewShelf(){
-  const name=prompt('ตั้งชื่อตู้ / ชั้นวาง (เช่น A หรือ Zone-1):');
+  const name=prompt('ตั้งชื่อตู้ / ชั้นวางใหม่ (เช่น ตู้ A-01):');
   if(!name||!name.trim()) return;
   if(roomLayout[name]){toast('ชื่อนี้มีอยู่แล้ว','err');return;}
 
   let lvlsStr = prompt('ต้องการให้ตู้นี้มีกี่ชั้น? (ระบุ 1 ถึง 6):', '4');
   let lvls = parseInt(lvlsStr);
   if(isNaN(lvls) || lvls < 1) lvls = 1;
-  if(lvls > 6) lvls = 6; // จำกัดสูงสุด 6 ชั้น
+  if(lvls > 6) lvls = 6;
 
-  roomLayout[name]={x:40, y:40, w:180, h:160, levels: lvls};
-  localStorage.setItem('wmsLayout2',JSON.stringify(roomLayout));
+  roomLayout[name]={x:40, y:40, w:160, h:140, levels: lvls};
+  localStorage.setItem('wmsLayout3',JSON.stringify(roomLayout));
   render2DMap();
 }
 
+// ⭐️ ฟังก์ชันการคัดลอกตู้
+function cloneShelf(originalName) {
+  const orig = roomLayout[originalName];
+  if(!orig) return;
+
+  const newName = prompt(`ตั้งชื่อตู้ใหม่ (คัดลอกขนาดมาจาก ${originalName}):`);
+  if(!newName || !newName.trim()) return;
+  if(roomLayout[newName]){toast('ชื่อนี้มีอยู่แล้ว','err');return;}
+
+  // สร้างตู้ใหม่โดยใช้ขนาดและชั้นจากของเดิม แต่ขยับแกน x, y ลงมานิดหน่อยให้เห็นชัด
+  roomLayout[newName] = {
+      x: orig.x + 30,
+      y: orig.y + 30,
+      w: orig.w,
+      h: orig.h,
+      levels: orig.levels
+  };
+  localStorage.setItem('wmsLayout3',JSON.stringify(roomLayout));
+  render2DMap();
+  toast(`คัดลอกชั้น ${newName} เรียบร้อย`,'ok');
+}
+
 function deleteShelf(name){
-  if(confirm(`ลบ "${name}" ออกจากห้อง?\n(สต๊อกสินค้าที่จดไว้จะไม่หาย แค่ชั้นวางในแผนผังหายไป)`)){
+  if(confirm(`ลบ "${name}" ออกจากห้อง?\n(ข้อมูลในสต๊อกจะไม่หาย แค่ตู้ในแผนผังหายไป)`)){
     delete roomLayout[name];
-    localStorage.setItem('wmsLayout2',JSON.stringify(roomLayout));
+    localStorage.setItem('wmsLayout3',JSON.stringify(roomLayout));
     render2DMap();
   }
 }
 
 function resetLayout(){
   if(confirm('ล้างพิกัดตู้ทั้งหมดกลับไปค่าเริ่มต้น?')){
-    localStorage.removeItem('wmsLayout2');
+    localStorage.removeItem('wmsLayout3');
     roomLayout={};
     render2DMap();
   }
