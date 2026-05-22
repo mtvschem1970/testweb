@@ -198,10 +198,10 @@
         // ฟังก์ชันส่งรายการเบิกเข้า/ออกไปยัง Google Sheets (POST)
         async function handleTransaction(event) {
             event.preventDefault();
-            if (!WEB_APP_URL || WEB_APP_URL === "https://script.google.com/macros/s/AKfycby9m1VsobxkvJwug77jO8Nnx-1RtSY3PFl-j1laMvlMXgRtm6bxXGjFF5XFmF6wvTvlwA/exec") {
-                alert("กรุณาใส่ Web App URL ก่อนทำรายการ");
-                return;
-            }
+            if (!WEB_APP_URL) {
+    alert("กรุณาใส่ Web App URL ก่อนทำรายการ");
+    return;
+}
 
             const id = document.getElementById('partSelect').value;
             const action = document.querySelector('input[name="actionType"]:checked').value;
