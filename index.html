@@ -3,269 +3,222 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการคลังอะไหล่ (Spare Parts Inventory)</title>
+    <title>ระบบคลังสินค้า 2D (Spare Parts)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-    
-    <style> body { font-family: 'Sarabun', sans-serif; } </style>
+    <style>
+        body { font-family: 'Sarabun', sans-serif; }
+        /* พื้นที่จำลองห้องคลังสินค้า */
+        #roomCanvas {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            background-color: #f1f5f9;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px; /* ลายตารางกริด */
+            border: 2px solid #e2e8f0;
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+        /* กล่องชั้นวางของ */
+        .shelf-box {
+            position: absolute;
+            width: 250px;
+            background: white;
+            border: 2px solid #94a3b8;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            user-select: none;
+        }
+        .drag-handle { cursor: grab; }
+        .drag-handle:active { cursor: grabbing; }
+    </style>
 </head>
-<body class="bg-gray-50 text-gray-800 min-h-screen pb-12">
+<body class="bg-gray-100 text-gray-800 min-h-screen">
 
-    <nav class="bg-blue-600 text-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-xl font-bold flex items-center gap-2">📦 ระบบบันทึกอุปกรณ์อะไหล่ (Spare Parts)</h1>
-            <button onclick="loadInventory()" class="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-lg text-sm font-medium transition duration-200">🔄 รีเฟรชข้อมูล</button>
+    <nav class="bg-blue-700 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <h1 class="text-xl font-bold flex items-center gap-2">📦 ระบบคลังสินค้า 2D</h1>
+            <div class="flex gap-2">
+                <button onclick="switchTab('tab-inventory')" class="tab-btn bg-blue-800 px-4 py-2 rounded font-medium hover:bg-blue-900 transition">📋 จัดการ & สต๊อก</button>
+                <button onclick="switchTab('tab-map')" class="tab-btn bg-blue-600 px-4 py-2 rounded font-medium hover:bg-blue-900 transition">🗺️ แผนผังห้อง</button>
+                <button onclick="switchTab('tab-logs')" class="tab-btn bg-blue-600 px-4 py-2 rounded font-medium hover:bg-blue-900 transition">⏱️ ประวัติ</button>
+                <button onclick="loadData()" class="bg-green-600 px-4 py-2 rounded font-medium hover:bg-green-700 transition">🔄 รีเฟรช</button>
+            </div>
         </div>
     </nav>
 
-    <div class="max-w-7xl mx-auto px-4 py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-            
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-fit">
-                <h2 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">📝 ทำรายการ เบิกเข้า / เบิกออก</h2>
-                <form id="transactionForm" onsubmit="handleTransaction(event)">
-                    
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        
+        <div id="tab-inventory" class="tab-content grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-xl shadow border">
+                <h2 class="text-lg font-bold mb-4 border-b pb-2">📝 ทำรายการ เบิกเข้า / ออก</h2>
+                <form onsubmit="handleTransaction(event)">
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">เลือกอะไหล่</label>
-                        <select id="partSelect" required class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition">
-                            <option value="">-- กำลังโหลดรายการอะไหล่ --</option>
-                        </select>
+                        <label class="block text-sm font-medium mb-1">เลือกอะไหล่</label>
+                        <select id="partSelect" required class="w-full p-2 bg-gray-50 border rounded-lg"><option value="">-- รอโหลดข้อมูล --</option></select>
                     </div>
-
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">ประเภทรายการ</label>
-                        <div class="grid grid-cols-2 gap-4">
-                            <label class="flex items-center justify-center p-3 border rounded-lg cursor-pointer hover:bg-green-50 transition border-gray-200">
-                                <input type="radio" name="actionType" value="IN" checked class="mr-2" onchange="toggleVendorField()">
-                                <span class="text-green-700 font-medium">📥 เบิกเข้าคลัง</span>
-                            </label>
-                            <label class="flex items-center justify-center p-3 border rounded-lg cursor-pointer hover:bg-red-50 transition border-gray-200">
-                                <input type="radio" name="actionType" value="OUT" class="mr-2" onchange="toggleVendorField()">
-                                <span class="text-red-700 font-medium">📤 เบิกออกไปใช้</span>
-                            </label>
+                        <label class="block text-sm font-medium mb-1">ประเภทรายการ</label>
+                        <div class="flex gap-4">
+                            <label class="flex-1 p-2 border rounded cursor-pointer hover:bg-green-50"><input type="radio" name="actionType" value="IN" checked onchange="toggleVendor()"> 📥 เบิกเข้า</label>
+                            <label class="flex-1 p-2 border rounded cursor-pointer hover:bg-red-50"><input type="radio" name="actionType" value="OUT" onchange="toggleVendor()"> 📤 เบิกออก</label>
                         </div>
                     </div>
-
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">จำนวน (ชิ้น)</label>
-                        <input type="number" id="transQty" min="1" required placeholder="ระบุจำนวนชิ้น" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg">
+                        <label class="block text-sm font-medium mb-1">จำนวน</label>
+                        <input type="number" id="transQty" min="1" required class="w-full p-2 bg-gray-50 border rounded-lg">
                     </div>
-
                     <div class="mb-4" id="vendorContainer">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">แหล่งซื้อ / ผู้จัดจำหน่าย (อัปเดตข้อมูล)</label>
-                        <input type="text" id="transVendor" placeholder="เช่น ร้านสมชาย, ไทวัสดุ" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        <label class="block text-sm font-medium mb-1">แหล่งซื้อ (เฉพาะเบิกเข้า)</label>
+                        <input type="text" id="transVendor" class="w-full p-2 bg-gray-50 border rounded-lg">
                     </div>
-
                     <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">หมายเหตุ / ผู้เบิก</label>
-                        <input type="text" id="transNote" placeholder="เช่น ซ่อมเครื่องจักรแผนก A" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg">
+                        <label class="block text-sm font-medium mb-1">หมายเหตุ / ผู้เบิก</label>
+                        <input type="text" id="transNote" required class="w-full p-2 bg-gray-50 border rounded-lg">
                     </div>
-
-                    <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition shadow-sm">บันทึกรายการ</button>
+                    <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-bold">บันทึกรายการ</button>
                 </form>
             </div>
 
-            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                <div class="flex justify-between items-center mb-4 border-b pb-2">
-                    <h2 class="text-lg font-bold text-gray-900">📋 รายการอะไหล่ในคลังสินค้า</h2>
-                    <span id="loadingStatus" class="text-sm text-gray-500 italic">กำลังโหลดข้อมูล...</span>
-                </div>
-                <div class="overflow-x-auto rounded-lg border border-gray-100">
-                    <table class="w-full text-sm text-left text-gray-500">
-                        <thead class="text-xs text-gray-700 uppercase bg-gray-100 border-b">
+            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow border">
+                <h2 class="text-lg font-bold mb-4 border-b pb-2">📋 ของคงเหลือ</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-gray-100 border-b">
                             <tr>
-                                <th class="px-4 py-3">รหัสอะไหล่</th>
-                                <th class="px-4 py-3">ชื่ออะไหล่</th>
-                                <th class="px-4 py-3">ตำแหน่งที่เก็บ</th>
-                                <th class="px-4 py-3 text-center">คงเหลือ (ชิ้น)</th>
-                                <th class="px-4 py-3">แหล่งซื้อ</th>
+                                <th class="p-3">รหัส</th>
+                                <th class="p-3">ชื่ออะไหล่</th>
+                                <th class="p-3">ตำแหน่ง (ชั้นวาง)</th>
+                                <th class="p-3 text-center">คงเหลือ</th>
                             </tr>
                         </thead>
-                        <tbody id="inventoryTableBody">
-                            <tr><td colspan="5" class="px-4 py-8 text-center text-gray-400">กำลังโหลด...</td></tr>
-                        </tbody>
+                        <tbody id="inventoryBody"><tr><td colspan="4" class="p-4 text-center">กำลังโหลด...</td></tr></tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <div class="flex justify-between items-center mb-6 border-b pb-2">
-                <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                    🏗️ แผนผังชั้นวางของ (สามารถคลิกค้างแล้วลากเพื่อจัดเรียงตำแหน่งได้)
-                </h2>
-                <span class="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">ลากที่หัวข้อชั้นวาง ✥</span>
-            </div>
-            
-            <div id="shelfMapContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div id="tab-map" class="tab-content hidden bg-white p-6 rounded-xl shadow border">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">🗺️ จัดการห้องคลังสินค้า (2D)</h2>
+                <div class="flex gap-2">
+                    <button onclick="addNewShelf()" class="bg-green-600 text-white px-3 py-1.5 rounded hover:bg-green-700 text-sm">➕ เพิ่มชั้นวางใหม่</button>
+                    <button onclick="resetLayout()" class="bg-red-500 text-white px-3 py-1.5 rounded hover:bg-red-600 text-sm">⚠️ ล้างตำแหน่ง</button>
                 </div>
+            </div>
+            <p class="text-sm text-gray-500 mb-4">คลิกค้างที่ชื่อชั้นวางแล้วลากเพื่อจัดตำแหน่งได้อิสระ</p>
+            
+            <div id="roomCanvas"></div>
         </div>
+
+        <div id="tab-logs" class="tab-content hidden bg-white p-6 rounded-xl shadow border">
+            <h2 class="text-lg font-bold mb-4 border-b pb-2">⏱️ ประวัติการเบิกเข้า-ออก</h2>
+            <div class="overflow-x-auto h-[600px]">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-gray-100 border-b sticky top-0">
+                        <tr>
+                            <th class="p-3">วัน/เวลา</th>
+                            <th class="p-3">รหัสอะไหล่</th>
+                            <th class="p-3">รายการ</th>
+                            <th class="p-3 text-center">จำนวน</th>
+                            <th class="p-3">ผู้เบิก/หมายเหตุ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsBody"><tr><td colspan="5" class="p-4 text-center">กำลังโหลด...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
 
     <script>
-        // ⚠️ วาง URL ของ Google Apps Script ของคุณที่นี่ (อย่าลืมตรวจสอบให้ตรงกับของคุณ)
+        // ⚠️ ใส่ URL ของ Apps Script ตรงนี้
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby9m1VsobxkvJwug77jO8Nnx-1RtSY3PFl-j1laMvlMXgRtm6bxXGjFF5XFmF6wvTvlwA/exec";
         
-        let inventoryData = [];
+        let globalInventory = [];
+        let globalLogs = [];
+        let roomLayout = JSON.parse(localStorage.getItem('roomLayout2D')) || {};
 
-        function toggleVendorField() {
-            const action = document.querySelector('input[name="actionType"]:checked').value;
-            const vendorDiv = document.getElementById('vendorContainer');
-            vendorDiv.style.display = action === 'IN' ? 'block' : 'none';
+        // --- ระบบสลับแท็บ ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.replace('bg-blue-800', 'bg-blue-600');
+            });
+            event.target.classList.replace('bg-blue-600', 'bg-blue-800');
         }
 
-        async function loadInventory() {
+        function toggleVendor() {
+            const action = document.querySelector('input[name="actionType"]:checked').value;
+            document.getElementById('vendorContainer').style.display = action === 'IN' ? 'block' : 'none';
+        }
+
+        // --- โหลดข้อมูลจาก Google Sheets ---
+        async function loadData() {
             if (!WEB_APP_URL) return;
-            const statusText = document.getElementById('loadingStatus');
-            const tableBody = document.getElementById('inventoryTableBody');
-            const selectDropdown = document.getElementById('partSelect');
-            statusText.innerText = "🔄 กำลังอัปเดต...";
-            
             try {
-                const response = await fetch(WEB_APP_URL);
-                inventoryData = await response.json();
+                const res = await fetch(WEB_APP_URL);
+                const data = await res.json();
+                globalInventory = data.inventory || [];
+                globalLogs = data.logs || [];
                 
-                tableBody.innerHTML = "";
-                inventoryData.forEach(item => {
-                    const row = document.createElement('tr');
-                    row.className = "bg-white border-b hover:bg-gray-50";
-                    const qty = Number(item["จำนวนคงเหลือ (Qty)"] || item["Qty"] || 0);
-                    row.innerHTML = `
-                        <td class="px-4 py-3 font-medium text-gray-900">${item["รหัสอะไหล่ (ID)"] || item["ID"] || '-'}</td>
-                        <td class="px-4 py-3 font-semibold text-blue-600">${item["ชื่ออะไหล่ (Name)"] || item["Name"] || '-'}</td>
-                        <td class="px-4 py-3"><span class="bg-gray-100 px-2 py-1 rounded text-xs border">${item["ตำแหน่ง (Location)"] || item["Location"] || '-'}</span></td>
-                        <td class="px-4 py-3 text-center font-bold ${qty <= 5 ? 'text-red-600 bg-red-50' : 'text-emerald-600'}">${qty.toLocaleString()}</td>
-                        <td class="px-4 py-3 text-xs text-gray-500">${item["ซื้อที่ไหน (Vendor)"] || item["Vendor"] || '-'}</td>
-                    `;
-                    tableBody.appendChild(row);
-                });
-
-                selectDropdown.innerHTML = `<option value="">-- เลือกอะไหล่ --</option>`;
-                inventoryData.forEach(item => {
-                    const id = item["รหัสอะไหล่ (ID)"] || item["ID"];
-                    const name = item["ชื่ออะไหล่ (Name)"] || item["Name"];
-                    selectDropdown.insertAdjacentHTML('beforeend', `<option value="${id}">[${id}] ${name}</option>`);
-                });
-
-                renderShelfMap();
-                statusText.innerText = "✅ ข้อมูลล่าสุด";
+                renderInventory();
+                renderLogs();
+                render2DMap();
             } catch (error) {
-                console.error(error);
-                statusText.innerText = "❌ โหลดข้อมูลล้มเหลว";
+                alert("โหลดข้อมูลล้มเหลว ตรวจสอบ URL หรืออินเทอร์เน็ต");
             }
         }
 
-        // ⭐️ ฟังก์ชันวาดแผนผัง พร้อมเปิดใช้งานระบบลาก-วาง
-        function renderShelfMap() {
-            const mapContainer = document.getElementById('shelfMapContainer');
-            mapContainer.innerHTML = '';
-            
-            // 1. จัดกลุ่มอะไหล่ตาม Location
-            const shelves = {};
-            inventoryData.forEach(item => {
-                const loc = item["ตำแหน่ง (Location)"] || item["Location"] || 'ไม่ได้ระบุตำแหน่ง';
-                if (!shelves[loc]) shelves[loc] = [];
-                shelves[loc].push(item);
-            });
+        function renderInventory() {
+            const tbody = document.getElementById('inventoryBody');
+            const select = document.getElementById('partSelect');
+            tbody.innerHTML = "";
+            select.innerHTML = '<option value="">-- เลือกอะไหล่ --</option>';
 
-            // 2. ดึงลำดับชั้นวางที่เคยจัดไว้จาก Local Storage
-            let savedOrder = JSON.parse(localStorage.getItem('shelfOrder')) || [];
-            let currentLocations = Object.keys(shelves);
-            
-            // 3. เรียงลำดับตามที่บันทึกไว้ (ถ้ามีชั้นวางใหม่ ให้ต่อท้าย)
-            let finalOrder = savedOrder.filter(loc => currentLocations.includes(loc));
-            currentLocations.forEach(loc => {
-                if (!finalOrder.includes(loc)) finalOrder.push(loc);
-            });
+            globalInventory.forEach(item => {
+                const id = item["รหัสอะไหล่ (ID)"] || item["ID"];
+                const name = item["ชื่ออะไหล่ (Name)"] || item["Name"];
+                const loc = item["ตำแหน่ง (Location)"] || item["Location"] || "-";
+                const qty = Number(item["จำนวนคงเหลือ (Qty)"] || item["Qty"] || 0);
 
-            // 4. สร้างกล่องตามลำดับ
-            finalOrder.forEach(location => {
-                const items = shelves[location];
-                // เพิ่มคลาส drag-handle เพื่อให้รู้ว่าตรงไหนจับลากได้
-                let html = `
-                <div class="shelf-card border-2 border-slate-300 rounded-xl p-4 bg-slate-50 flex flex-col h-full shadow-sm hover:shadow-lg transition bg-white" data-id="${location}">
-                    <div class="drag-handle cursor-move bg-slate-700 text-white text-center py-2 rounded-t-lg font-bold mb-3 shadow-inner flex items-center justify-center gap-2 hover:bg-slate-800 transition">
-                        <span class="text-slate-400 text-sm">✥</span> 📍 ${location}
-                    </div>
-                    <div class="flex-1 space-y-2 cursor-default">`;
-                
-                items.forEach(i => {
-                    const name = i["ชื่ออะไหล่ (Name)"] || i["Name"];
-                    const qty = Number(i["จำนวนคงเหลือ (Qty)"] || i["Qty"] || 0);
-                    const isLowStock = qty <= 5;
-                    const badgeClass = isLowStock ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white';
-                    const boxClass = isLowStock ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white';
-                    
-                    html += `
-                        <div class="flex justify-between items-center text-sm p-2 rounded-lg border ${boxClass}">
-                            <span class="truncate font-medium pr-2 text-gray-700">${name}</span>
-                            <span class="font-bold px-2 py-0.5 rounded-md ${badgeClass}">${qty}</span>
-                        </div>`;
-                });
-                
-                html += `</div>
-                    <div class="mt-3 text-xs text-center text-gray-400 border-t pt-2">ฐานชั้นวาง</div>
-                </div>`;
-                mapContainer.insertAdjacentHTML('beforeend', html);
-            });
-
-            // 5. เปิดใช้งาน SortableJS
-            new Sortable(mapContainer, {
-                animation: 200, // ความสมูทตอนสลับที่ (ms)
-                handle: '.drag-handle', // ให้จับลากได้เฉพาะตรงหัวข้อสีเทาเข้ม
-                ghostClass: 'opacity-50', // ทำโปร่งใสตอนกำลังลาก
-                onEnd: function (evt) {
-                    // เมื่อลากวางเสร็จ ให้บันทึกลำดับใหม่ลง Local Storage
-                    const itemEls = mapContainer.querySelectorAll('.shelf-card');
-                    const newOrder = Array.from(itemEls).map(el => el.getAttribute('data-id'));
-                    localStorage.setItem('shelfOrder', JSON.stringify(newOrder));
-                },
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-3 font-medium">${id}</td>
+                        <td class="p-3 text-blue-600 font-semibold">${name}</td>
+                        <td class="p-3"><span class="bg-gray-200 px-2 py-1 rounded text-xs">${loc}</span></td>
+                        <td class="p-3 text-center font-bold ${qty <= 5 ? 'text-red-500' : 'text-green-600'}">${qty}</td>
+                    </tr>
+                `);
+                select.insertAdjacentHTML('beforeend', `<option value="${id}">[${id}] ${name}</option>`);
             });
         }
 
-        async function handleTransaction(event) {
-            event.preventDefault();
-            if (!WEB_APP_URL) return alert("กรุณาใส่ Web App URL");
+        function renderLogs() {
+            const tbody = document.getElementById('logsBody');
+            tbody.innerHTML = "";
+            // เรียงจากใหม่ไปเก่า (ล่างขึ้นบนของตาราง Sheets)
+            const reversedLogs = [...globalLogs].reverse(); 
+            
+            reversedLogs.forEach(log => {
+                const dateObj = new Date(log["วันเวลา (Timestamp)"] || log["Timestamp"]);
+                const dateStr = dateObj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+                const action = log["ประเภท (Action)"] || log["Action"];
+                const actionColor = action.includes("เข้า") ? "text-green-600 bg-green-50" : "text-red-600 bg-red-50";
 
-            const id = document.getElementById('partSelect').value;
-            const action = document.querySelector('input[name="actionType"]:checked').value;
-            const qty = document.getElementById('transQty').value;
-            const note = document.getElementById('transNote').value;
-            const vendor = action === 'IN' ? document.getElementById('transVendor').value : ""; 
-            const submitBtn = document.getElementById('submitBtn');
-
-            if (!id) return alert("กรุณาเลือกอะไหล่");
-
-            submitBtn.disabled = true;
-            submitBtn.innerText = "⏳ กำลังบันทึกข้อมูล...";
-
-            try {
-                const response = await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    redirect: 'follow',
-                    body: JSON.stringify({ action, id, qty, note, vendor })
-                });
-
-                const result = await response.json();
-                if (result.status === "success") {
-                    alert("บันทึกข้อมูลเรียบร้อยแล้ว!");
-                    document.getElementById('transQty').value = "";
-                    document.getElementById('transNote').value = "";
-                    document.getElementById('transVendor').value = "";
-                    await loadInventory();
-                } else {
-                    alert("เกิดข้อผิดพลาด: " + result.message);
-                }
-            } catch (error) {
-                alert("ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerText = "บันทึกรายการ";
-            }
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr class="border-b hover:bg-gray-50 text-xs md:text-sm">
+                        <td class="p-3 text-gray-500">${dateStr}</td>
+                        <td class="p-3 font-medium">${log["รหัสอะไหล่ (ID)"] || log["ID"]}</td>
+                        <td class="p-3"><span class="px-2 py-1 rounded font-bold ${actionColor}">${action}</span></td>
+                        <td class="p-3 text-center font-bold">${log["จำนวน (Qty)"] || log["Qty"]}</td>
+                        <td class="p-3">${log["หมายเหตุ (Note)"] || log["Note"]}</td>
+                    </tr>
+                `);
+            });
         }
 
-        window.onload = loadInventory;
-    </script>
-</body>
-</html>
+        // --- ระบบ 2D Canvas &
