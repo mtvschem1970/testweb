@@ -221,4 +221,169 @@
             });
         }
 
-        // --- ระบบ 2D Canvas &
+        // --- ระบบ 2D Canvas & ลากวาง ---
+        function render2DMap() {
+            const canvas = document.getElementById('roomCanvas');
+            canvas.innerHTML = "";
+            
+            // รวบรวมชั้นวางจาก Inventory
+            const activeShelves = {};
+            globalInventory.forEach(item => {
+                const loc = item["ตำแหน่ง (Location)"] || item["Location"] || '未ระบุ';
+                if(!activeShelves[loc]) activeShelves[loc] = [];
+                activeShelves[loc].push(item);
+            });
+
+            // เอา Layout ที่เซฟไว้มาผสมกับของจริง
+            const allShelfNames = new Set([...Object.keys(activeShelves), ...Object.keys(roomLayout)]);
+
+            let newX = 20, newY = 20;
+
+            allShelfNames.forEach(shelfName => {
+                const items = activeShelves[shelfName] || [];
+                const pos = roomLayout[shelfName] || { x: newX, y: newY };
+                
+                // จัดตำแหน่งเริ่มต้นให้ไม่ทับกันถ้าเป็นของใหม่
+                if(!roomLayout[shelfName]) { newX += 270; if(newX > 800) { newX = 20; newY += 200; } }
+
+                let itemsHtml = items.map(i => {
+                    const qty = Number(i["จำนวนคงเหลือ (Qty)"] || 0);
+                    return `<div class="flex justify-between text-xs p-1 border-b"><span class="truncate pr-2">${i["ชื่ออะไหล่ (Name)"]}</span><span class="font-bold ${qty<=5?'text-red-500':'text-green-600'}">${qty}</span></div>`;
+                }).join('');
+
+                if(items.length === 0) itemsHtml = `<div class="text-xs text-center text-gray-400 p-2">ชั้นวางว่างเปล่า</div>`;
+
+                const shelfDiv = document.createElement('div');
+                shelfDiv.className = 'shelf-box';
+                shelfDiv.style.left = pos.x + 'px';
+                shelfDiv.style.top = pos.y + 'px';
+                shelfDiv.dataset.name = shelfName;
+
+                shelfDiv.innerHTML = `
+                    <div class="drag-handle bg-slate-700 text-white p-2 flex justify-between items-center rounded-t border-b-2 border-slate-800">
+                        <span class="font-bold text-sm flex items-center gap-1">✥ ${shelfName}</span>
+                        <button onclick="deleteShelf('${shelfName}')" class="text-red-400 hover:text-red-200" title="ลบชั้นวาง">✖</button>
+                    </div>
+                    <div class="p-2 bg-white max-h-[150px] overflow-y-auto">${itemsHtml}</div>
+                `;
+                canvas.appendChild(shelfDiv);
+            });
+
+            initDraggable();
+        }
+
+        // โลจิกการลากกล่องอิสระ
+        function initDraggable() {
+            const canvas = document.getElementById('roomCanvas');
+            let isDragging = false;
+            let currentBox = null;
+            let startX, startY;
+
+            canvas.onmousedown = (e) => {
+                if (e.target.closest('.drag-handle') && !e.target.closest('button')) {
+                    isDragging = true;
+                    currentBox = e.target.closest('.shelf-box');
+                    currentBox.style.zIndex = 1000;
+                    startX = e.clientX - currentBox.offsetLeft;
+                    startY = e.clientY - currentBox.offsetTop;
+                }
+            };
+
+            document.onmousemove = (e) => {
+                if (!isDragging) return;
+                let x = e.clientX - startX;
+                let y = e.clientY - startY;
+                // ขอบเขต Canvas
+                x = Math.max(0, Math.min(x, canvas.offsetWidth - currentBox.offsetWidth));
+                y = Math.max(0, Math.min(y, canvas.offsetHeight - currentBox.offsetHeight));
+                
+                currentBox.style.left = x + 'px';
+                currentBox.style.top = y + 'px';
+            };
+
+            document.onmouseup = () => {
+                if (isDragging) {
+                    currentBox.style.zIndex = 1;
+                    isDragging = false;
+                    saveRoomLayout(); // บันทึกพิกัดเมื่อปล่อยเมาส์
+                    currentBox = null;
+                }
+            };
+        }
+
+        function saveRoomLayout() {
+            const boxes = document.querySelectorAll('.shelf-box');
+            roomLayout = {};
+            boxes.forEach(box => {
+                roomLayout[box.dataset.name] = {
+                    x: box.offsetLeft,
+                    y: box.offsetTop
+                };
+            });
+            localStorage.setItem('roomLayout2D', JSON.stringify(roomLayout));
+        }
+
+        function addNewShelf() {
+            const name = prompt("ตั้งชื่อชั้นวางใหม่ (เช่น ชั้น C ล็อค 1):");
+            if (name && name.trim() !== "") {
+                if(roomLayout[name]) return alert("ชื่อนี้มีอยู่แล้ว!");
+                roomLayout[name] = { x: 50, y: 50 }; // จุดเริ่มต้น
+                localStorage.setItem('roomLayout2D', JSON.stringify(roomLayout));
+                render2DMap();
+            }
+        }
+
+        function deleteShelf(name) {
+            if(confirm(`คุณแน่ใจหรือไม่ว่าจะลบ "${name}" ออกจากแผนผัง?\n(อะไหล่ที่อยู่บนชั้นนี้จะไม่ถูกลบออกจากสต๊อก)`)) {
+                delete roomLayout[name];
+                localStorage.setItem('roomLayout2D', JSON.stringify(roomLayout));
+                render2DMap();
+            }
+        }
+
+        function resetLayout() {
+            if(confirm("รีเซ็ตพิกัดชั้นวางทั้งหมดกลับไปจุดเริ่มต้น?")) {
+                localStorage.removeItem('roomLayout2D');
+                roomLayout = {};
+                render2DMap();
+            }
+        }
+
+        // --- ระบบส่งข้อมูล ---
+        async function handleTransaction(event) {
+            event.preventDefault();
+            const id = document.getElementById('partSelect').value;
+            const action = document.querySelector('input[name="actionType"]:checked').value;
+            const qty = document.getElementById('transQty').value;
+            const note = document.getElementById('transNote').value;
+            const vendor = action === 'IN' ? document.getElementById('transVendor').value : "";
+            const btn = document.getElementById('submitBtn');
+
+            btn.disabled = true;
+            btn.innerText = "⏳ กำลังบันทึก...";
+
+            try {
+                const res = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action, id, qty, note, vendor })
+                });
+                const result = await res.json();
+                if (result.status === "success") {
+                    alert("บันทึกสำเร็จ!");
+                    document.getElementById('transQty').value = "";
+                    document.getElementById('transNote').value = "";
+                    document.getElementById('transVendor').value = "";
+                    await loadData(); // โหลดใหม่ทั้งหมด
+                } else {
+                    alert("ผิดพลาด: " + result.message);
+                }
+            } catch(e) { alert("ส่งข้อมูลไม่สำเร็จ"); }
+            
+            btn.disabled = false;
+            btn.innerText = "บันทึกรายการ";
+        }
+
+        window.onload = loadData;
+    </script>
+</body>
+</html>
