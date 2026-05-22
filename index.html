@@ -15,7 +15,7 @@
             height: 600px;
             background-color: #f1f5f9;
             background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
-            background-size: 20px 20px; /* ลายตารางกริด */
+            background-size: 20px 20px; /* ลายตารางกริด 20px */
             border: 2px solid #e2e8f0;
             border-radius: 0.75rem;
             overflow: hidden;
@@ -29,9 +29,22 @@
             border-radius: 0.5rem;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
             user-select: none;
+            transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
         }
         .drag-handle { cursor: grab; }
         .drag-handle:active { cursor: grabbing; }
+
+        /* ⭐️ เอฟเฟกต์เรืองแสงเมื่อค้นหาเจอ */
+        .highlight-shelf {
+            border-color: #eab308 !important; /* สีเหลือง */
+            box-shadow: 0 0 20px 5px rgba(234, 179, 8, 0.6) !important;
+            transform: scale(1.02);
+            z-index: 50 !important;
+        }
+        .highlight-item {
+            background-color: #fef08a !important; /* พื้นหลังสีเหลืองอ่อน */
+            font-weight: 700;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 min-h-screen">
@@ -100,14 +113,23 @@
         </div>
 
         <div id="tab-map" class="tab-content hidden bg-white p-6 rounded-xl shadow border">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-bold">🗺️ จัดการห้องคลังสินค้า (2D)</h2>
+            <div class="flex justify-between items-end mb-4 flex-wrap gap-4">
+                <div>
+                    <h2 class="text-lg font-bold">🗺️ จัดการห้องคลังสินค้า (2D - Snap Grid)</h2>
+                    <p class="text-sm text-gray-500">ลากเพื่อจัดตำแหน่ง (ระบบจะจัดให้ตรงตารางอัตโนมัติ)</p>
+                </div>
                 <div class="flex gap-2">
                     <button onclick="addNewShelf()" class="bg-green-600 text-white px-3 py-1.5 rounded hover:bg-green-700 text-sm">➕ เพิ่มชั้นวางใหม่</button>
                     <button onclick="resetLayout()" class="bg-red-500 text-white px-3 py-1.5 rounded hover:bg-red-600 text-sm">⚠️ ล้างตำแหน่ง</button>
                 </div>
             </div>
-            <p class="text-sm text-gray-500 mb-4">คลิกค้างที่ชื่อชั้นวางแล้วลากเพื่อจัดตำแหน่งได้อิสระ</p>
+
+            <div class="mb-4 relative">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <span class="text-gray-400">🔍</span>
+                </div>
+                <input type="text" id="searchMapInput" onkeyup="searchAndHighlight()" placeholder="พิมพ์ชื่ออะไหล่ หรือ รหัส เพื่อค้นหาตำแหน่งชั้นวาง..." class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5 shadow-sm">
+            </div>
             
             <div id="roomCanvas"></div>
         </div>
@@ -145,9 +167,7 @@
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(tabId).classList.remove('hidden');
             
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.replace('bg-blue-800', 'bg-blue-600');
-            });
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.replace('bg-blue-800', 'bg-blue-600'));
             event.target.classList.replace('bg-blue-600', 'bg-blue-800');
         }
 
@@ -156,7 +176,7 @@
             document.getElementById('vendorContainer').style.display = action === 'IN' ? 'block' : 'none';
         }
 
-        // --- โหลดข้อมูลจาก Google Sheets ---
+        // --- โหลดข้อมูล ---
         async function loadData() {
             if (!WEB_APP_URL) return;
             try {
@@ -169,6 +189,7 @@
                 renderLogs();
                 render2DMap();
             } catch (error) {
+                console.error(error);
                 alert("โหลดข้อมูลล้มเหลว ตรวจสอบ URL หรืออินเทอร์เน็ต");
             }
         }
@@ -200,7 +221,6 @@
         function renderLogs() {
             const tbody = document.getElementById('logsBody');
             tbody.innerHTML = "";
-            // เรียงจากใหม่ไปเก่า (ล่างขึ้นบนของตาราง Sheets)
             const reversedLogs = [...globalLogs].reverse(); 
             
             reversedLogs.forEach(log => {
@@ -221,34 +241,35 @@
             });
         }
 
-        // --- ระบบ 2D Canvas & ลากวาง ---
+        // --- ระบบ 2D Canvas & Snap Grid ---
         function render2DMap() {
             const canvas = document.getElementById('roomCanvas');
             canvas.innerHTML = "";
             
-            // รวบรวมชั้นวางจาก Inventory
             const activeShelves = {};
             globalInventory.forEach(item => {
-                const loc = item["ตำแหน่ง (Location)"] || item["Location"] || '未ระบุ';
+                const loc = item["ตำแหน่ง (Location)"] || item["Location"] || 'ไม่ได้ระบุ';
                 if(!activeShelves[loc]) activeShelves[loc] = [];
                 activeShelves[loc].push(item);
             });
 
-            // เอา Layout ที่เซฟไว้มาผสมกับของจริง
             const allShelfNames = new Set([...Object.keys(activeShelves), ...Object.keys(roomLayout)]);
-
             let newX = 20, newY = 20;
 
             allShelfNames.forEach(shelfName => {
                 const items = activeShelves[shelfName] || [];
                 const pos = roomLayout[shelfName] || { x: newX, y: newY };
                 
-                // จัดตำแหน่งเริ่มต้นให้ไม่ทับกันถ้าเป็นของใหม่
-                if(!roomLayout[shelfName]) { newX += 270; if(newX > 800) { newX = 20; newY += 200; } }
+                if(!roomLayout[shelfName]) { newX += 260; if(newX > 800) { newX = 20; newY += 200; } }
 
                 let itemsHtml = items.map(i => {
+                    const id = i["รหัสอะไหล่ (ID)"] || i["ID"];
                     const qty = Number(i["จำนวนคงเหลือ (Qty)"] || 0);
-                    return `<div class="flex justify-between text-xs p-1 border-b"><span class="truncate pr-2">${i["ชื่ออะไหล่ (Name)"]}</span><span class="font-bold ${qty<=5?'text-red-500':'text-green-600'}">${qty}</span></div>`;
+                    // ⭐️ เพิ่มคลาส item-row และ data-id สำหรับทำระบบ Highlight
+                    return `<div class="item-row flex justify-between text-xs p-1.5 border-b rounded transition-colors" data-id="${id}">
+                        <span class="truncate pr-2">${i["ชื่ออะไหล่ (Name)"] || i["Name"]}</span>
+                        <span class="font-bold ${qty<=5?'text-red-500':'text-green-600'}">${qty}</span>
+                    </div>`;
                 }).join('');
 
                 if(items.length === 0) itemsHtml = `<div class="text-xs text-center text-gray-400 p-2">ชั้นวางว่างเปล่า</div>`;
@@ -264,20 +285,21 @@
                         <span class="font-bold text-sm flex items-center gap-1">✥ ${shelfName}</span>
                         <button onclick="deleteShelf('${shelfName}')" class="text-red-400 hover:text-red-200" title="ลบชั้นวาง">✖</button>
                     </div>
-                    <div class="p-2 bg-white max-h-[150px] overflow-y-auto">${itemsHtml}</div>
+                    <div class="p-2 bg-white max-h-[200px] overflow-y-auto">${itemsHtml}</div>
                 `;
                 canvas.appendChild(shelfDiv);
             });
 
             initDraggable();
+            searchAndHighlight(); // ทำงานทันทีเผื่อมีคีย์เวิร์ดค้างอยู่
         }
 
-        // โลจิกการลากกล่องอิสระ
         function initDraggable() {
             const canvas = document.getElementById('roomCanvas');
             let isDragging = false;
             let currentBox = null;
             let startX, startY;
+            const GRID_SIZE = 20; // ⭐️ ขนาด Snap Grid
 
             canvas.onmousedown = (e) => {
                 if (e.target.closest('.drag-handle') && !e.target.closest('button')) {
@@ -293,9 +315,14 @@
                 if (!isDragging) return;
                 let x = e.clientX - startX;
                 let y = e.clientY - startY;
-                // ขอบเขต Canvas
+                
+                // จำกัดไม่ให้ลากทะลุจอ
                 x = Math.max(0, Math.min(x, canvas.offsetWidth - currentBox.offsetWidth));
                 y = Math.max(0, Math.min(y, canvas.offsetHeight - currentBox.offsetHeight));
+                
+                // ⭐️ คำนวณ Snap to Grid (ปัดเศษให้ลงล็อก 20px)
+                x = Math.round(x / GRID_SIZE) * GRID_SIZE;
+                y = Math.round(y / GRID_SIZE) * GRID_SIZE;
                 
                 currentBox.style.left = x + 'px';
                 currentBox.style.top = y + 'px';
@@ -303,12 +330,44 @@
 
             document.onmouseup = () => {
                 if (isDragging) {
-                    currentBox.style.zIndex = 1;
+                    currentBox.style.zIndex = ""; // รีเซ็ต z-index กลับ
                     isDragging = false;
-                    saveRoomLayout(); // บันทึกพิกัดเมื่อปล่อยเมาส์
+                    saveRoomLayout();
                     currentBox = null;
                 }
             };
+        }
+
+        // ⭐️ ฟังก์ชันค้นหาและฉายแสง (Highlight)
+        function searchAndHighlight() {
+            const keyword = document.getElementById('searchMapInput').value.toLowerCase().trim();
+            const allBoxes = document.querySelectorAll('.shelf-box');
+            const allItems = document.querySelectorAll('.item-row');
+            
+            // ล้างแสงไฟเดิมออกทั้งหมดก่อน
+            allBoxes.forEach(box => box.classList.remove('highlight-shelf'));
+            allItems.forEach(item => item.classList.remove('highlight-item'));
+
+            if (!keyword) return; // ถ้าไม่ได้พิมพ์อะไร ก็จบการทำงาน
+
+            globalInventory.forEach(item => {
+                const id = (item["รหัสอะไหล่ (ID)"] || item["ID"] || "").toLowerCase();
+                const name = (item["ชื่ออะไหล่ (Name)"] || item["Name"] || "").toLowerCase();
+                const loc = item["ตำแหน่ง (Location)"] || item["Location"];
+
+                // ถ้าพิมพ์รหัส หรือ ชื่อ ตรงกับข้อมูล
+                if (id.includes(keyword) || name.includes(keyword)) {
+                    // หากล่องชั้นวางของชิ้นนั้น
+                    const targetBox = document.querySelector(`.shelf-box[data-name="${loc}"]`);
+                    if (targetBox) {
+                        targetBox.classList.add('highlight-shelf'); // เปิดไฟให้กล่อง
+                        
+                        // ไฮไลต์สีให้แถวของอะไหล่ชิ้นนั้นด้วย
+                        const targetItem = targetBox.querySelector(`.item-row[data-id="${item["รหัสอะไหล่ (ID)"] || item["ID"]}"]`);
+                        if(targetItem) targetItem.classList.add('highlight-item');
+                    }
+                }
+            });
         }
 
         function saveRoomLayout() {
@@ -327,7 +386,7 @@
             const name = prompt("ตั้งชื่อชั้นวางใหม่ (เช่น ชั้น C ล็อค 1):");
             if (name && name.trim() !== "") {
                 if(roomLayout[name]) return alert("ชื่อนี้มีอยู่แล้ว!");
-                roomLayout[name] = { x: 50, y: 50 }; // จุดเริ่มต้น
+                roomLayout[name] = { x: 40, y: 40 }; // จุดเริ่มต้นแบบลง Grid พอดี
                 localStorage.setItem('roomLayout2D', JSON.stringify(roomLayout));
                 render2DMap();
             }
@@ -373,7 +432,7 @@
                     document.getElementById('transQty').value = "";
                     document.getElementById('transNote').value = "";
                     document.getElementById('transVendor').value = "";
-                    await loadData(); // โหลดใหม่ทั้งหมด
+                    await loadData(); 
                 } else {
                     alert("ผิดพลาด: " + result.message);
                 }
