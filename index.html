@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WMS — ระบบบริหารคลังสินค้า</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -49,7 +49,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .nav-item:hover{background:var(--bg3);color:var(--text)}
 .nav-item.active{background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent)1a}
 .nav-item .icon{width:16px;text-align:center;font-size:15px;flex-shrink:0}
-.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:600;padding:1px 6px;border-radius:999px;font-family:var(--mono)}
 .sidebar-footer{padding:12px 8px;border-top:1px solid var(--border)}
 .status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;box-shadow:0 0 6px var(--green)}
 
@@ -71,16 +70,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .btn-primary:hover{background:var(--accent2)}
 .btn-ghost{background:transparent;color:var(--text2);border-color:var(--border)}
 .btn-ghost:hover{background:var(--bg3);color:var(--text)}
-.btn-danger{background:var(--red-dim);color:var(--red);border-color:var(--red)33}
-.btn-danger:hover{background:var(--red);color:#fff}
 .btn-success{background:var(--green-dim);color:var(--green);border-color:var(--green)33}
 .btn-success:hover{background:var(--green);color:#fff}
 .btn-sm{padding:5px 10px;font-size:11px}
 
 /* CONTENT */
 .content{flex:1;overflow-y:auto;padding:20px}
-
-/* PANELS */
 .panel{display:none}
 .panel.active{display:block}
 
@@ -96,28 +91,23 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .stat-value{font-size:26px;font-weight:600;color:var(--text);font-family:var(--mono);line-height:1}
 .stat-sub{font-size:11px;color:var(--text3);margin-top:4px}
 
-/* TWO COL */
+/* CARDS & FORMS */
 .two-col{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
-
-/* CARD */
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg)}
 .card-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .card-title{font-size:13px;font-weight:600;letter-spacing:.02em}
 .card-body{padding:16px}
-
-/* FORM */
 .form-group{margin-bottom:14px}
 .form-label{display:block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
 .form-control{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:var(--radius);font-size:13px;font-family:var(--font);outline:none;transition:border .15s}
 .form-control:focus{border-color:var(--accent)}
-.form-control::placeholder{color:var(--text3)}
 select.form-control option{background:var(--bg3)}
 .radio-group{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .radio-card{position:relative}
 .radio-card input{position:absolute;opacity:0;pointer-events:none}
 .radio-card label{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .15s;font-size:12px;font-weight:500;color:var(--text2)}
 .radio-card input:checked+label{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
-.radio-card label:hover{border-color:var(--border2);color:var(--text)}
+.divider{height:1px;background:var(--border);margin:12px 0}
 
 /* TABLE */
 .table-wrap{overflow-x:auto}
@@ -126,7 +116,6 @@ thead th{padding:10px 12px;text-align:left;font-size:10px;font-weight:600;letter
 tbody tr{border-bottom:1px solid var(--border)44;transition:background .1s}
 tbody tr:hover{background:var(--bg3)}
 tbody td{padding:10px 12px;font-size:13px;vertical-align:middle}
-tbody tr:last-child{border-bottom:none}
 .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:var(--mono)}
 .badge-loc{background:var(--bg4);color:var(--text2);border:1px solid var(--border)}
 .badge-ok{background:var(--green-dim);color:var(--green)}
@@ -136,67 +125,52 @@ tbody tr:last-child{border-bottom:none}
 .badge-out{background:var(--red-dim);color:var(--red)}
 .code{font-family:var(--mono);font-size:12px;color:var(--text2)}
 
-/* 2D MAP */
-#mapPanel{padding:0}
+/* 2D MAP ⭐️ อัปเดตใหม่ */
 .map-toolbar{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .map-search-wrap{position:relative;flex:1;min-width:200px}
-.map-search-wrap input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:7px 10px 7px 30px;border-radius:var(--radius);font-size:13px;font-family:var(--font);outline:none;transition:border .15s}
-.map-search-wrap input:focus{border-color:var(--accent)}
-.map-search-wrap input::placeholder{color:var(--text3)}
-.map-search-ico{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;pointer-events:none}
-#roomCanvas{position:relative;background:var(--bg);background-image:radial-gradient(var(--border) 1px,transparent 1px);background-size:20px 20px;height:620px;overflow:hidden}
-.shelf-box{position:absolute;width:230px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);user-select:none;transition:border-color .2s,box-shadow .2s,transform .15s}
+.map-search-wrap input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:7px 10px 7px 30px;border-radius:var(--radius);font-size:13px;outline:none;}
+.map-search-wrap input:focus{border-color:#fff;}
+.map-search-ico{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;}
+#roomCanvas{position:relative;background:var(--bg);background-image:radial-gradient(var(--border) 1px,transparent 1px);background-size:20px 20px;height:650px;overflow:hidden}
+
+/* ⭐️ ปรับให้ย่อขยายได้ (resize: both) */
+.shelf-box{position:absolute;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);user-select:none;transition:border-color .2s,box-shadow .2s,transform .15s;display:flex;flex-direction:column;resize:both;overflow:hidden;min-width:140px;min-height:100px}
 .shelf-box:hover{border-color:var(--border2)}
-.drag-handle{cursor:grab;background:var(--bg3);padding:9px 12px;border-bottom:1px solid var(--border);border-radius:var(--radius-lg) var(--radius-lg) 0 0;display:flex;align-items:center;justify-content:space-between}
+
+.drag-handle{cursor:grab;background:var(--bg3);padding:8px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .drag-handle:active{cursor:grabbing}
-.shelf-title{font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;letter-spacing:.03em}
-.shelf-title .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0}
-.shelf-del{background:none;border:none;color:var(--text3);cursor:pointer;padding:2px;border-radius:3px;transition:color .15s;font-size:12px;line-height:1}
+.shelf-title{font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px}
+.shelf-title .dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0}
+.shelf-del{background:none;border:none;color:var(--text3);cursor:pointer;padding:2px;font-size:12px;transition:color .15s}
 .shelf-del:hover{color:var(--red)}
-.shelf-items{padding:6px;max-height:180px;overflow-y:auto}
-.item-row{display:flex;justify-content:space-between;align-items:center;padding:5px 7px;border-radius:4px;font-size:11px;margin-bottom:2px;transition:background .1s;gap:8px;border:1px solid transparent}
-.item-row:hover{background:var(--bg4)}
-.item-name{color:var(--text2);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.item-qty{font-family:var(--mono);font-size:11px;font-weight:600;flex-shrink:0}
-.empty-shelf{padding:12px;text-align:center;font-size:11px;color:var(--text3);font-style:italic}
 
-/* Highlight effects */
-.highlight-shelf{border-color:var(--accent)!important;box-shadow:0 0 0 3px var(--accent-dim),0 0 20px var(--accent-dim)!important;transform:scale(1.01);z-index:50!important}
-.highlight-item{background:var(--accent-dim)!important;border-color:var(--accent)33!important}
-.highlight-item .item-name{color:var(--accent)!important;font-weight:600}
+/* ⭐️ ภาพจำลองแบ่งชั้น */
+.shelf-levels{flex:1;display:flex;flex-direction:column;position:relative}
+.shelf-level-row{flex:1;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);opacity:0.6;font-weight:500;letter-spacing:0.05em}
+.shelf-level-row:last-child{border-bottom:none}
 
-/* LOGS */
-.log-timestamp{font-family:var(--mono);font-size:11px;color:var(--text3)}
+/* ⭐️ แสงสีขาวตอนค้นหาเจอ */
+.highlight-shelf{border-color:#ffffff!important;box-shadow:0 0 15px rgba(255,255,255,0.7), inset 0 0 25px rgba(255,255,255,0.3)!important;transform:scale(1.02);z-index:50!important}
+.search-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:12px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:10}
+.highlight-shelf .search-overlay{opacity:1;pointer-events:auto;backdrop-filter:blur(2px)}
+.loc-badge{background:#fff;color:#000;font-size:14px;font-weight:700;padding:4px 10px;border-radius:4px;margin-bottom:6px;box-shadow:0 2px 10px rgba(255,255,255,0.4)}
+.loc-qty{color:#a7f3d0;font-size:12px;font-family:var(--mono);font-weight:600}
+.loc-sub{font-size:11px;color:#cbd5e1;margin-top:6px}
 
-/* TOAST */
+/* TOAST & LOADERS */
 #toast{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-.toast-item{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:12px 16px;border-radius:var(--radius-lg);font-size:13px;min-width:240px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.4);pointer-events:auto;animation:slideIn .2s ease}
+.toast-item{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:12px 16px;border-radius:var(--radius-lg);font-size:13px;min-width:240px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:slideIn .2s ease}
 @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
-.toast-item.ok{border-color:var(--green)44}
-.toast-item.err{border-color:var(--red)44}
-.toast-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.toast-item.ok .toast-dot{background:var(--green)}
-.toast-item.err .toast-dot{background:var(--red)}
+.toast-dot{width:8px;height:8px;border-radius:50%}
+.toast-item.ok{border-color:var(--green)44}.toast-item.ok .toast-dot{background:var(--green)}
+.toast-item.err{border-color:var(--red)44}.toast-item.err .toast-dot{background:var(--red)}
 
-/* LOADING */
 .loading-row td{text-align:center;padding:32px;color:var(--text3)}
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
-
-/* SCROLLBAR */
-::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-
-/* DIVIDER */
-.divider{height:1px;background:var(--border);margin:12px 0}
-
-/* ACTION MENU */
-.action-row{display:flex;gap:8px;padding-top:4px}
-
-.map-legend{padding:8px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:16px;font-size:11px;color:var(--text3)}
-.legend-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
-
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 .refresh-ico{display:inline-block;transition:transform .4s}
 .refreshing .refresh-ico{transform:rotate(360deg)}
 </style>
@@ -204,7 +178,6 @@ tbody tr:last-child{border-bottom:none}
 <body>
 
 <div class="app">
-  <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="sidebar-logo">
       <div class="logo-icon">📦</div>
@@ -215,23 +188,13 @@ tbody tr:last-child{border-bottom:none}
     </div>
     <nav class="nav">
       <div class="nav-section">หลัก</div>
-      <button class="nav-item active" onclick="switchPanel('dashboard',this)">
-        <span class="icon">▦</span> ภาพรวม
-      </button>
-      <button class="nav-item" onclick="switchPanel('transaction',this)">
-        <span class="icon">⇅</span> ทำรายการ
-      </button>
-      <button class="nav-item" onclick="switchPanel('inventory',this)">
-        <span class="icon">≡</span> สต๊อกสินค้า
-      </button>
+      <button class="nav-item active" onclick="switchPanel('dashboard',this)"><span class="icon">▦</span> ภาพรวม</button>
+      <button class="nav-item" onclick="switchPanel('transaction',this)"><span class="icon">⇅</span> ทำรายการ</button>
+      <button class="nav-item" onclick="switchPanel('inventory',this)"><span class="icon">≡</span> สต๊อกสินค้า</button>
       <div class="nav-section" style="margin-top:8px">แผนที่</div>
-      <button class="nav-item" onclick="switchPanel('map',this)">
-        <span class="icon">⊞</span> แผนผังห้อง
-      </button>
+      <button class="nav-item" onclick="switchPanel('map',this)"><span class="icon">⊞</span> แผนผังห้อง</button>
       <div class="nav-section" style="margin-top:8px">รายงาน</div>
-      <button class="nav-item" onclick="switchPanel('logs',this)">
-        <span class="icon">☰</span> ประวัติรายการ
-      </button>
+      <button class="nav-item" onclick="switchPanel('logs',this)"><span class="icon">☰</span> ประวัติรายการ</button>
     </nav>
     <div class="sidebar-footer">
       <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--radius);background:var(--bg3)">
@@ -244,7 +207,6 @@ tbody tr:last-child{border-bottom:none}
     </div>
   </aside>
 
-  <!-- MAIN -->
   <div class="main">
     <div class="topbar">
       <div>
@@ -263,35 +225,15 @@ tbody tr:last-child{border-bottom:none}
 
     <div class="content">
 
-      <!-- DASHBOARD PANEL -->
       <div id="panel-dashboard" class="panel active">
         <div class="stats-row">
-          <div class="stat-card blue">
-            <div class="stat-label">รายการทั้งหมด</div>
-            <div class="stat-value" id="statTotal">—</div>
-            <div class="stat-sub">ประเภทอะไหล่</div>
-          </div>
-          <div class="stat-card green">
-            <div class="stat-label">สินค้าคงเหลือ</div>
-            <div class="stat-value" id="statStock">—</div>
-            <div class="stat-sub">ชิ้นรวมทั้งคลัง</div>
-          </div>
-          <div class="stat-card red">
-            <div class="stat-label">ใกล้หมด</div>
-            <div class="stat-value" id="statLow">—</div>
-            <div class="stat-sub">รายการที่ ≤ 5 ชิ้น</div>
-          </div>
-          <div class="stat-card amber">
-            <div class="stat-label">รายการวันนี้</div>
-            <div class="stat-value" id="statToday">—</div>
-            <div class="stat-sub">ธุรกรรมล่าสุด</div>
-          </div>
+          <div class="stat-card blue"><div class="stat-label">รายการทั้งหมด</div><div class="stat-value" id="statTotal">—</div><div class="stat-sub">ประเภทอะไหล่</div></div>
+          <div class="stat-card green"><div class="stat-label">สินค้าคงเหลือ</div><div class="stat-value" id="statStock">—</div><div class="stat-sub">ชิ้นรวมทั้งคลัง</div></div>
+          <div class="stat-card red"><div class="stat-label">ใกล้หมด</div><div class="stat-value" id="statLow">—</div><div class="stat-sub">รายการที่ ≤ 5 ชิ้น</div></div>
+          <div class="stat-card amber"><div class="stat-label">รายการวันนี้</div><div class="stat-value" id="statToday">—</div><div class="stat-sub">ธุรกรรมล่าสุด</div></div>
         </div>
-
         <div class="card">
-          <div class="card-header">
-            <span class="card-title">⚠ รายการใกล้หมดสต๊อก (≤ 5 ชิ้น)</span>
-          </div>
+          <div class="card-header"><span class="card-title">⚠ รายการใกล้หมดสต๊อก (≤ 5 ชิ้น)</span></div>
           <div class="table-wrap">
             <table>
               <thead><tr><th>รหัส</th><th>ชื่ออะไหล่</th><th>ตำแหน่ง</th><th>คงเหลือ</th></tr></thead>
@@ -301,7 +243,6 @@ tbody tr:last-child{border-bottom:none}
         </div>
       </div>
 
-      <!-- TRANSACTION PANEL -->
       <div id="panel-transaction" class="panel">
         <div class="two-col">
           <div class="card">
@@ -315,32 +256,15 @@ tbody tr:last-child{border-bottom:none}
                 <div class="form-group">
                   <label class="form-label">ประเภทรายการ</label>
                   <div class="radio-group">
-                    <div class="radio-card">
-                      <input type="radio" name="actionType" id="typeIN" value="IN" checked onchange="toggleVendor()">
-                      <label for="typeIN">📥 เบิกเข้า</label>
-                    </div>
-                    <div class="radio-card">
-                      <input type="radio" name="actionType" id="typeOUT" value="OUT" onchange="toggleVendor()">
-                      <label for="typeOUT">📤 เบิกออก</label>
-                    </div>
+                    <div class="radio-card"><input type="radio" name="actionType" id="typeIN" value="IN" checked onchange="toggleVendor()"><label for="typeIN">📥 เบิกเข้า</label></div>
+                    <div class="radio-card"><input type="radio" name="actionType" id="typeOUT" value="OUT" onchange="toggleVendor()"><label for="typeOUT">📤 เบิกออก</label></div>
                   </div>
                 </div>
-                <div class="form-group">
-                  <label class="form-label">จำนวน (ชิ้น)</label>
-                  <input type="number" id="transQty" min="1" required class="form-control" placeholder="0">
-                </div>
-                <div class="form-group" id="vendorContainer">
-                  <label class="form-label">แหล่งซื้อ / Vendor</label>
-                  <input type="text" id="transVendor" class="form-control" placeholder="ชื่อผู้จำหน่าย">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">หมายเหตุ / ผู้เบิก</label>
-                  <input type="text" id="transNote" required class="form-control" placeholder="ชื่อผู้เบิก หรือ หมายเหตุ">
-                </div>
+                <div class="form-group"><label class="form-label">จำนวน (ชิ้น)</label><input type="number" id="transQty" min="1" required class="form-control" placeholder="0"></div>
+                <div class="form-group" id="vendorContainer"><label class="form-label">แหล่งซื้อ / Vendor</label><input type="text" id="transVendor" class="form-control" placeholder="ชื่อผู้จำหน่าย"></div>
+                <div class="form-group"><label class="form-label">หมายเหตุ / ผู้เบิก</label><input type="text" id="transNote" required class="form-control" placeholder="ชื่อผู้เบิก หรือ หมายเหตุ"></div>
                 <div class="divider"></div>
-                <button type="submit" id="submitBtn" class="btn btn-primary" style="width:100%;justify-content:center">
-                  บันทึกรายการ
-                </button>
+                <button type="submit" id="submitBtn" class="btn btn-primary" style="width:100%;justify-content:center">บันทึกรายการ</button>
               </form>
             </div>
           </div>
@@ -359,14 +283,11 @@ tbody tr:last-child{border-bottom:none}
         </div>
       </div>
 
-      <!-- INVENTORY PANEL -->
       <div id="panel-inventory" class="panel">
         <div class="card">
           <div class="card-header">
             <span class="card-title">สต๊อกสินค้า</span>
-            <div style="display:flex;gap:8px;align-items:center">
-              <input type="text" id="invSearch" oninput="filterInventory()" placeholder="ค้นหา..." class="form-control" style="width:180px;padding:5px 9px;font-size:12px">
-            </div>
+            <input type="text" id="invSearch" oninput="filterInventory()" placeholder="ค้นหา..." class="form-control" style="width:180px;padding:5px 9px;font-size:12px">
           </div>
           <div class="table-wrap">
             <table>
@@ -377,28 +298,26 @@ tbody tr:last-child{border-bottom:none}
         </div>
       </div>
 
-      <!-- MAP PANEL -->
       <div id="panel-map" class="panel" style="padding:0;margin:-20px">
         <div class="card" style="border-radius:0;border:none;border-bottom:1px solid var(--border)">
           <div class="map-toolbar">
             <div class="map-search-wrap">
               <span class="map-search-ico">🔍</span>
-              <input type="text" id="searchMapInput" onkeyup="searchAndHighlight()" placeholder="ค้นหาอะไหล่เพื่อระบุตำแหน่งชั้นวาง...">
+              <input type="text" id="searchMapInput" onkeyup="searchAndHighlight()" placeholder="พิมพ์ตำแหน่ง หรือ ชื่ออะไหล่ เพื่อค้นหา (ค้นหาปุ๊บไฟสว่างทันที)...">
             </div>
-            <button class="btn btn-success btn-sm" onclick="addNewShelf()">＋ เพิ่มชั้นวาง</button>
-            <button class="btn btn-ghost btn-sm" onclick="resetLayout()">↺ รีเซ็ต</button>
+            <button class="btn btn-success btn-sm" onclick="addNewShelf()">＋ เพิ่มชั้นวางใหม่</button>
+            <button class="btn btn-ghost btn-sm" onclick="resetLayout()">↺ ล้างค่าเริ่มต้น</button>
           </div>
           <div id="roomCanvas"></div>
-          <div class="map-legend">
-            <span><span class="legend-dot" style="background:var(--accent)"></span>มีสินค้า</span>
-            <span><span class="legend-dot" style="background:var(--text3)"></span>ว่างเปล่า</span>
-            <span><span class="legend-dot" style="background:var(--red)"></span>ใกล้หมด</span>
-            <span style="margin-left:auto;font-size:10px">ลากชั้นวางเพื่อจัดตำแหน่ง (Snap 20px)</span>
+          <div style="padding:8px 16px;border-top:1px solid var(--border);display:flex;align-items:center;font-size:11px;color:var(--text3);justify-content:space-between">
+            <div style="display:flex;gap:12px">
+              <span>💡 กดลากที่หัวข้อเพื่อย้ายตำแหน่ง (Snap 20px)</span>
+              <span>↔ นำเมาส์ชี้มุมขวาล่างของตู้เพื่อย่อ-ขยายขนาดตู้ได้</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- LOGS PANEL -->
       <div id="panel-logs" class="panel">
         <div class="card">
           <div class="card-header">
@@ -407,16 +326,16 @@ tbody tr:last-child{border-bottom:none}
           </div>
           <div class="table-wrap" style="max-height:620px;overflow-y:auto">
             <table>
-              <thead style="position:sticky;top:0;z-index:1"><tr><th>วัน/เวลา</th><th>รหัสอะไหล่</th><th>ประเภท</th><th style="text-align:right">จำนวน</th><th>ผู้เบิก / หมายเหตุ</th></tr></thead>
+              <thead style="position:sticky;top:0;z-index:1;background:var(--bg2)"><tr><th>วัน/เวลา</th><th>รหัสอะไหล่</th><th>ประเภท</th><th style="text-align:right">จำนวน</th><th>ผู้เบิก / หมายเหตุ</th></tr></thead>
               <tbody id="logsBody"><tr class="loading-row"><td colspan="5"><span class="spinner"></span>กำลังโหลด...</td></tr></tbody>
             </table>
           </div>
         </div>
       </div>
 
-    </div><!-- /content -->
-  </div><!-- /main -->
-</div><!-- /app -->
+    </div>
+  </div>
+</div>
 
 <div id="toast"></div>
 
@@ -425,11 +344,11 @@ const WEB_APP_URL="https://script.google.com/macros/s/AKfycby9m1VsobxkvJwug77jO8
 
 let globalInventory=[];
 let globalLogs=[];
-let roomLayout=JSON.parse(localStorage.getItem('wmsLayout'))||{};
+// ข้อมูลห้องจะเก็บ x, y, width(w), height(h) และจำนวนชั้น (levels)
+let roomLayout=JSON.parse(localStorage.getItem('wmsLayout2'))||{}; 
 let currentPanel='dashboard';
 let invFilteredData=[];
 
-// ─── PANEL / NAV ─────────────────────────────────────────────
 const PANEL_TITLES={dashboard:'ภาพรวม',transaction:'ทำรายการ',inventory:'สต๊อกสินค้า',map:'แผนผังห้อง',logs:'ประวัติรายการ'};
 function switchPanel(id,btn){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
@@ -441,7 +360,6 @@ function switchPanel(id,btn){
   if(id==='map') render2DMap();
 }
 
-// ─── TOAST ───────────────────────────────────────────────────
 function toast(msg,type='ok'){
   const t=document.getElementById('toast');
   const el=document.createElement('div');
@@ -456,7 +374,7 @@ async function loadData(){
   const btn=document.getElementById('refreshBtn');
   const ico=document.getElementById('refreshIco');
   btn.disabled=true;
-  ico.style.animation='spin .6s linear infinite';
+  ico.classList.add('refreshing');
   try{
     const res=await fetch(WEB_APP_URL,{cache:'no-store'});
     const data=await res.json();
@@ -475,18 +393,21 @@ async function loadData(){
     if(currentPanel==='map') render2DMap();
   }catch(e){
     toast('โหลดข้อมูลไม่สำเร็จ — ตรวจสอบการเชื่อมต่อ','err');
-    console.error(e);
   }finally{
     btn.disabled=false;
-    ico.style.animation='';
+    ico.classList.remove('refreshing');
   }
 }
 
-// ─── DASHBOARD ───────────────────────────────────────────────
+// Data Helpers
+function getId(i){return i["รหัสอะไหล่ (ID)"]||i["ID"]||''}
+function getName(i){return i["ชื่ออะไหล่ (Name)"]||i["Name"]||''}
+function getLoc(i){return String(i["ตำแหน่ง (Location)"]||i["Location"]||'-')}
+function getQty(i){return Number(i["จำนวนคงเหลือ (Qty)"]||i["Qty"]||0)}
+
 function renderDashboard(){
   const low=globalInventory.filter(i=>getQty(i)<=5);
   const totalQty=globalInventory.reduce((s,i)=>s+getQty(i),0);
-
   const today=new Date().toDateString();
   const todayLogs=globalLogs.filter(l=>{
     const d=new Date(l["วันเวลา (Timestamp)"]||l["Timestamp"]);
@@ -500,30 +421,19 @@ function renderDashboard(){
 
   const tbody=document.getElementById('lowStockBody');
   if(!low.length){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text3)">✓ ไม่มีรายการใกล้หมด</td></tr>';return;}
-  tbody.innerHTML=low.map(i=>{
-    const id=getId(i),name=getName(i),loc=getLoc(i),qty=getQty(i);
-    return `<tr><td class="code">${id}</td><td style="font-weight:500">${name}</td><td><span class="badge badge-loc">${loc}</span></td><td><span class="badge badge-danger">${qty}</span></td></tr>`;
-  }).join('');
-}
-
-// ─── INVENTORY ───────────────────────────────────────────────
-function getId(i){return i["รหัสอะไหล่ (ID)"]||i["ID"]||''}
-function getName(i){return i["ชื่ออะไหล่ (Name)"]||i["Name"]||''}
-function getLoc(i){return i["ตำแหน่ง (Location)"]||i["Location"]||'-'}
-function getQty(i){return Number(i["จำนวนคงเหลือ (Qty)"]||i["Qty"]||0)}
-
-function inventoryRow(i){
-  const id=getId(i),name=getName(i),loc=getLoc(i),qty=getQty(i);
-  const qtyBadge=qty<=0?'badge-danger':qty<=5?'badge-warn':'badge-ok';
-  const status=qty<=0?'หมด':qty<=5?'ใกล้หมด':'ปกติ';
-  const statBadge=qty<=0?'badge-danger':qty<=5?'badge-warn':'badge-ok';
-  return `<tr><td class="code">${id}</td><td style="font-weight:500;color:var(--text)">${name}</td><td><span class="badge badge-loc">${loc}</span></td><td style="text-align:right"><span class="badge ${qtyBadge}">${qty}</span></td><td><span class="badge ${statBadge}">${status}</span></td></tr>`;
+  tbody.innerHTML=low.map(i=>`<tr><td class="code">${getId(i)}</td><td style="font-weight:500">${getName(i)}</td><td><span class="badge badge-loc">${getLoc(i)}</span></td><td><span class="badge badge-danger">${getQty(i)}</span></td></tr>`).join('');
 }
 
 function renderInventory(){
   const tbody=document.getElementById('inventoryBody');
   if(!globalInventory.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text3)">ไม่มีข้อมูล</td></tr>';return;}
-  tbody.innerHTML=invFilteredData.map(inventoryRow).join('');
+  tbody.innerHTML=invFilteredData.map(i=>{
+    const id=getId(i),name=getName(i),loc=getLoc(i),qty=getQty(i);
+    const qtyBadge=qty<=0?'badge-danger':qty<=5?'badge-warn':'badge-ok';
+    const status=qty<=0?'หมด':qty<=5?'ใกล้หมด':'ปกติ';
+    const statBadge=qty<=0?'badge-danger':qty<=5?'badge-warn':'badge-ok';
+    return `<tr><td class="code">${id}</td><td style="font-weight:500;color:var(--text)">${name}</td><td><span class="badge badge-loc">${loc}</span></td><td style="text-align:right"><span class="badge ${qtyBadge}">${qty}</span></td><td><span class="badge ${statBadge}">${status}</span></td></tr>`;
+  }).join('');
   document.getElementById('invCount').textContent=invFilteredData.length+' รายการ';
 }
 
@@ -537,9 +447,9 @@ function renderTxInventory(){
   const tbody=document.getElementById('txInventoryBody');
   if(!globalInventory.length){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text3)">ไม่มีข้อมูล</td></tr>';return;}
   tbody.innerHTML=globalInventory.map(i=>{
-    const id=getId(i),name=getName(i),loc=getLoc(i),qty=getQty(i);
+    const qty=getQty(i);
     const qtyBadge=qty<=0?'badge-danger':qty<=5?'badge-warn':'badge-ok';
-    return `<tr><td class="code">${id}</td><td style="font-weight:500">${name}</td><td><span class="badge badge-loc">${loc}</span></td><td style="text-align:right"><span class="badge ${qtyBadge}">${qty}</span></td></tr>`;
+    return `<tr><td class="code">${getId(i)}</td><td style="font-weight:500">${getName(i)}</td><td><span class="badge badge-loc">${getLoc(i)}</span></td><td style="text-align:right"><span class="badge ${qtyBadge}">${qty}</span></td></tr>`;
   }).join('');
   document.getElementById('invCount').textContent=globalInventory.length+' รายการ';
 }
@@ -547,32 +457,21 @@ function renderTxInventory(){
 function populateSelect(){
   const sel=document.getElementById('partSelect');
   sel.innerHTML='<option value="">— เลือกอะไหล่ —</option>';
-  globalInventory.forEach(i=>{
-    const id=getId(i),name=getName(i);
-    sel.insertAdjacentHTML('beforeend',`<option value="${id}">[${id}] ${name}</option>`);
-  });
+  globalInventory.forEach(i=>sel.insertAdjacentHTML('beforeend',`<option value="${getId(i)}">[${getId(i)}] ${getName(i)}</option>`));
 }
 
-// ─── LOGS ────────────────────────────────────────────────────
 function renderLogs(){
   const tbody=document.getElementById('logsBody');
   document.getElementById('logCount').textContent=globalLogs.length+' รายการ';
   if(!globalLogs.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text3)">ไม่มีประวัติ</td></tr>';return;}
-  const rows=[...globalLogs].reverse().map(log=>{
-    const dateObj=new Date(log["วันเวลา (Timestamp)"]||log["Timestamp"]);
-    const dateStr=dateObj.toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'});
+  tbody.innerHTML=[...globalLogs].reverse().map(log=>{
+    const dateStr=new Date(log["วันเวลา (Timestamp)"]||log["Timestamp"]).toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'});
     const action=log["ประเภท (Action)"]||log["Action"]||'';
-    const isIn=action.includes("เข้า");
-    const cls=isIn?'badge-in':'badge-out';
-    const id=log["รหัสอะไหล่ (ID)"]||log["ID"]||'';
-    const qty=log["จำนวน (Qty)"]||log["Qty"]||0;
-    const note=log["หมายเหตุ (Note)"]||log["Note"]||'';
-    return `<tr><td class="log-timestamp">${dateStr}</td><td class="code">${id}</td><td><span class="badge ${cls}">${action}</span></td><td style="text-align:right;font-family:var(--mono);font-weight:600">${qty}</td><td style="color:var(--text2)">${note}</td></tr>`;
+    const cls=action.includes("เข้า")?'badge-in':'badge-out';
+    return `<tr><td class="log-timestamp">${dateStr}</td><td class="code">${log["รหัสอะไหล่ (ID)"]||log["ID"]||''}</td><td><span class="badge ${cls}">${action}</span></td><td style="text-align:right;font-family:var(--mono);font-weight:600">${log["จำนวน (Qty)"]||log["Qty"]||0}</td><td style="color:var(--text2)">${log["หมายเหตุ (Note)"]||log["Note"]||''}</td></tr>`;
   }).join('');
-  tbody.innerHTML=rows;
 }
 
-// ─── TRANSACTION ─────────────────────────────────────────────
 function toggleVendor(){
   const act=document.querySelector('input[name="actionType"]:checked').value;
   document.getElementById('vendorContainer').style.display=act==='IN'?'block':'none';
@@ -601,53 +500,50 @@ async function handleTransaction(event){
   btn.disabled=false;btn.textContent='บันทึกรายการ';
 }
 
-// ─── 2D MAP ──────────────────────────────────────────────────
+// ─── 2D MAP & HIGHLIGHT ──────────────────────────────────────
 function render2DMap(){
   const canvas=document.getElementById('roomCanvas');
   canvas.innerHTML='';
 
-  const activeShelves={};
-  globalInventory.forEach(item=>{
-    const loc=getLoc(item)||'ไม่ระบุ';
-    if(!activeShelves[loc])activeShelves[loc]=[];
-    activeShelves[loc].push(item);
-  });
-
-  const allShelfNames=new Set([...Object.keys(activeShelves),...Object.keys(roomLayout)]);
+  const allShelfNames=Object.keys(roomLayout);
   let newX=20,newY=20;
 
   allShelfNames.forEach(shelfName=>{
-    const items=activeShelves[shelfName]||[];
-    const pos=roomLayout[shelfName]||{x:newX,y:newY};
-    if(!roomLayout[shelfName]){newX+=250;if(newX>780){newX=20;newY+=220;}}
+    // ดึงค่าเก่า หรือตั้งค่า Default ถ้าเพิ่งสร้าง (มี w: 180, h: 140, levels: x)
+    const pos=roomLayout[shelfName]||{x:newX,y:newY,w:180,h:140,levels:4};
+    if(!roomLayout[shelfName]){newX+=200;if(newX>780){newX=20;newY+=160;}}
 
-    const hasLow=items.some(i=>getQty(i)<=5&&getQty(i)>0);
-    const isEmpty=items.length===0;
-    const dotColor=isEmpty?'var(--text3)':hasLow?'var(--red)':'var(--accent)';
-
-    const itemsHtml=items.length?items.map(i=>{
-      const qty=getQty(i);
-      const qcls=qty<=0?'color:var(--red)':qty<=5?'color:var(--amber)':'color:var(--green)';
-      return `<div class="item-row" data-id="${getId(i)}"><span class="item-name">${getName(i)}</span><span class="item-qty" style="${qcls}">${qty}</span></div>`;
-    }).join(''):`<div class="empty-shelf">ยังไม่มีสินค้า</div>`;
+    const lvls = pos.levels || 4;
+    let levelHtml = '';
+    // สร้างเส้นแบ่งชั้น (วาดจากชั้นบนสุดลงล่าง)
+    for(let i=lvls; i>=1; i--) {
+        levelHtml += `<div class="shelf-level-row">ชั้น ${i}</div>`;
+    }
 
     const div=document.createElement('div');
     div.className='shelf-box';
-    div.style.cssText=`left:${pos.x}px;top:${pos.y}px`;
+    // บังคับกำหนด width / height ตามที่บันทึกไว้เพื่อให้ resize ได้
+    div.style.cssText=`left:${pos.x}px; top:${pos.y}px; width:${pos.w||180}px; height:${pos.h||140}px;`;
     div.dataset.name=shelfName;
+    
+    // โครงสร้างภายในตู้ (ซ่อน item แล้ว, โชว์เส้นแบ่งชั้นแทน)
     div.innerHTML=`
       <div class="drag-handle">
-        <span class="shelf-title"><span class="dot" style="background:${dotColor}"></span>${shelfName}</span>
+        <span class="shelf-title"><span class="dot"></span>${shelfName}</span>
         <button class="shelf-del" onclick="deleteShelf('${shelfName.replace(/'/g,"\\'")}')">✕</button>
       </div>
-      <div class="shelf-items">${itemsHtml}</div>`;
+      <div class="shelf-levels">${levelHtml}</div>
+      <div class="search-overlay" id="overlay-${shelfName.replace(/\s/g,'')}"></div>`;
+    
     canvas.appendChild(div);
   });
 
   initDraggable();
-  searchAndHighlight();
+  initResizeObserver(); // ตัวจับเมื่อมีการลากขยายตู้
+  searchAndHighlight(); // สั่งรันเผื่อมีคำค้นหาค้างอยู่
 }
 
+// ⭐️ ระบบลากจัดตำแหน่ง (Snap 20px)
 function initDraggable(){
   const canvas=document.getElementById('roomCanvas');
   const GRID=20;
@@ -665,94 +561,162 @@ function initDraggable(){
     }
   };
 
-  // Use canvas for mousemove to avoid lag
   canvas.onmousemove=e=>{
     if(!dragging)return;
-    const cr=canvas.getBoundingClientRect();
-    let x=e.clientX-cr.left-ox+box.offsetLeft-(e.clientX-ox-cr.left);
-    // simpler calc:
-    x=e.clientX-cr.left-(ox-box.offsetLeft+(e.clientX-cr.left-box.offsetLeft-ox+ox));
-    // correct:
-    x=e.clientX-ox;
-    y=e.clientY-oy;
+    let x=e.clientX-ox;
+    let y=e.clientY-oy;
     const maxX=canvas.offsetWidth-box.offsetWidth;
     const maxY=canvas.offsetHeight-box.offsetHeight;
+    
     x=Math.max(0,Math.min(x,maxX));
     y=Math.max(0,Math.min(y,maxY));
     x=Math.round(x/GRID)*GRID;
     y=Math.round(y/GRID)*GRID;
+    
     box.style.left=x+'px';
     box.style.top=y+'px';
   };
 
   document.addEventListener('mouseup',()=>{
-    if(dragging){box.style.zIndex='';dragging=false;saveLayout();box=null;}
+    if(dragging){
+      box.style.zIndex='';
+      dragging=false;
+      saveLayout();
+      box=null;
+    }
   },{once:false});
 }
 
-let y=0; // hoisted for drag calc
+// ⭐️ ระบบจับการขยายตู้แล้วเซฟอัตโนมัติ
+let resizeObserver;
+function initResizeObserver() {
+    if(resizeObserver) resizeObserver.disconnect();
+    resizeObserver = new ResizeObserver(entries => {
+        let changed = false;
+        for (let entry of entries) {
+            const box = entry.target;
+            const name = box.dataset.name;
+            if(roomLayout[name]) {
+                if(roomLayout[name].w !== box.offsetWidth || roomLayout[name].h !== box.offsetHeight) {
+                    roomLayout[name].w = box.offsetWidth;
+                    roomLayout[name].h = box.offsetHeight;
+                    changed = true;
+                }
+            }
+        }
+        if(changed) localStorage.setItem('wmsLayout2',JSON.stringify(roomLayout));
+    });
+    document.querySelectorAll('.shelf-box').forEach(box => resizeObserver.observe(box));
+}
 
 function saveLayout(){
   const boxes=document.querySelectorAll('#roomCanvas .shelf-box');
-  roomLayout={};
-  boxes.forEach(b=>{roomLayout[b.dataset.name]={x:b.offsetLeft,y:b.offsetTop};});
-  localStorage.setItem('wmsLayout',JSON.stringify(roomLayout));
+  boxes.forEach(b=>{
+      if(roomLayout[b.dataset.name]){
+        roomLayout[b.dataset.name].x = b.offsetLeft;
+        roomLayout[b.dataset.name].y = b.offsetTop;
+      }
+  });
+  localStorage.setItem('wmsLayout2',JSON.stringify(roomLayout));
 }
 
+// ⭐️ ระบบค้นหา ฉายแสงสีขาว และบอกชั้น
 function searchAndHighlight(){
   const kw=document.getElementById('searchMapInput').value.toLowerCase().trim();
-  document.querySelectorAll('.shelf-box').forEach(b=>b.classList.remove('highlight-shelf'));
-  document.querySelectorAll('.item-row').forEach(r=>r.classList.remove('highlight-item'));
-  if(!kw)return;
+  
+  // ล้างการเรืองแสงทั้งหมดออกก่อน
+  document.querySelectorAll('.shelf-box').forEach(b=>{
+      b.classList.remove('highlight-shelf');
+      b.querySelector('.search-overlay').innerHTML = '';
+  });
+  
+  if(!kw) return;
+
+  const shelfMatches = {};
+
   globalInventory.forEach(item=>{
-    const id=getId(item).toLowerCase(),name=getName(item).toLowerCase(),loc=getLoc(item);
-    if(id.includes(kw)||name.includes(kw)){
-      const box=document.querySelector(`.shelf-box[data-name="${loc}"]`);
-      if(box){
-        box.classList.add('highlight-shelf');
-        const row=box.querySelector(`.item-row[data-id="${getId(item)}"]`);
-        if(row)row.classList.add('highlight-item');
+    const id=getId(item).toLowerCase(), name=getName(item).toLowerCase(), loc=getLoc(item);
+    
+    // ถ้าคำค้นหาตรงกับ รหัส หรือ ชื่อ หรือ ตำแหน่ง
+    if(id.includes(kw) || name.includes(kw) || loc.toLowerCase().includes(kw)){
+      
+      // วิ่งหาว่าในบรรดาตู้ทั้งหมดที่เราสร้างไว้ ตู้ไหนที่ชื่อไปตรงกับ "ตำแหน่ง" ของอะไหล่ชิ้นนี้
+      let targetShelf = Object.keys(roomLayout).find(k => loc.toLowerCase().includes(k.toLowerCase()));
+      
+      if(targetShelf) {
+          if(!shelfMatches[targetShelf]) shelfMatches[targetShelf] = [];
+          shelfMatches[targetShelf].push({
+              fullLocation: loc, // ข้อมูลชั้นที่เราพิมพ์ไว้เป๊ะๆ (เช่น ตู้ A ชั้น 3)
+              qty: getQty(item)
+          });
       }
     }
   });
+
+  // เปิดไฟสว่างให้ตู้ที่เจอ พร้อมแสดงข้อความ
+  Object.keys(shelfMatches).forEach(shelfName => {
+      const box = document.querySelector(`.shelf-box[data-name="${shelfName}"]`);
+      if(box){
+          box.classList.add('highlight-shelf');
+          const overlay = box.querySelector('.search-overlay');
+          
+          let html = `<div style="font-size:12px;margin-bottom:6px;font-weight:600;letter-spacing:1px">📍 เป้าหมายอยู่:</div>`;
+          
+          // โชว์แค่ 2 ตำแหน่งแรกในตู้นี้ที่ค้นเจอ กันมันล้น
+          shelfMatches[shelfName].slice(0,2).forEach(m => {
+              html += `
+                  <div class="loc-badge">${m.fullLocation}</div>
+                  <div class="loc-qty">คงเหลือ: ${m.qty} ชิ้น</div>
+              `;
+          });
+          
+          if(shelfMatches[shelfName].length > 2) {
+              html += `<div class="loc-sub">และตำแหน่งอื่นอีก ${shelfMatches[shelfName].length - 2} จุด</div>`;
+          }
+          
+          overlay.innerHTML = html;
+      }
+  });
+}
+
+function handleGlobalSearch(){
+  const kw=document.getElementById('globalSearch').value;
+  if(!kw)return;
+  // วิ่งไปหน้าแผนผังห้องและค้นหาอัตโนมัติ
+  document.querySelectorAll('.nav-item').forEach(b=>{ if(b.textContent.includes('แผนผัง'))b.click(); });
+  document.getElementById('searchMapInput').value=kw;
+  searchAndHighlight();
 }
 
 function addNewShelf(){
-  const name=prompt('ตั้งชื่อชั้นวางใหม่ (เช่น ชั้น C-01):');
-  if(name&&name.trim()){
-    if(roomLayout[name]){toast('ชื่อนี้มีอยู่แล้ว','err');return;}
-    roomLayout[name]={x:20,y:20};
-    localStorage.setItem('wmsLayout',JSON.stringify(roomLayout));
-    render2DMap();
-  }
+  const name=prompt('ตั้งชื่อตู้ / ชั้นวาง (เช่น A หรือ Zone-1):');
+  if(!name||!name.trim()) return;
+  if(roomLayout[name]){toast('ชื่อนี้มีอยู่แล้ว','err');return;}
+
+  let lvlsStr = prompt('ต้องการให้ตู้นี้มีกี่ชั้น? (ระบุ 1 ถึง 6):', '4');
+  let lvls = parseInt(lvlsStr);
+  if(isNaN(lvls) || lvls < 1) lvls = 1;
+  if(lvls > 6) lvls = 6; // จำกัดสูงสุด 6 ชั้น
+
+  roomLayout[name]={x:40, y:40, w:180, h:160, levels: lvls};
+  localStorage.setItem('wmsLayout2',JSON.stringify(roomLayout));
+  render2DMap();
 }
 
 function deleteShelf(name){
-  if(confirm(`ลบ "${name}" ออกจากแผนผัง?\n(สต๊อกสินค้าจะไม่ถูกลบ)`)){
+  if(confirm(`ลบ "${name}" ออกจากห้อง?\n(สต๊อกสินค้าที่จดไว้จะไม่หาย แค่ชั้นวางในแผนผังหายไป)`)){
     delete roomLayout[name];
-    localStorage.setItem('wmsLayout',JSON.stringify(roomLayout));
+    localStorage.setItem('wmsLayout2',JSON.stringify(roomLayout));
     render2DMap();
   }
 }
 
 function resetLayout(){
-  if(confirm('รีเซ็ตตำแหน่งชั้นวางทั้งหมด?')){
-    localStorage.removeItem('wmsLayout');
+  if(confirm('ล้างพิกัดตู้ทั้งหมดกลับไปค่าเริ่มต้น?')){
+    localStorage.removeItem('wmsLayout2');
     roomLayout={};
     render2DMap();
   }
-}
-
-// ─── GLOBAL SEARCH ──────────────────────────────────────────
-function handleGlobalSearch(){
-  const kw=document.getElementById('globalSearch').value.toLowerCase().trim();
-  if(!kw)return;
-  // Switch to inventory and filter
-  document.querySelectorAll('.nav-item').forEach(b=>{
-    if(b.textContent.includes('สต๊อก'))b.click();
-  });
-  document.getElementById('invSearch').value=document.getElementById('globalSearch').value;
-  filterInventory();
 }
 
 window.onload=loadData;
