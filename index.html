@@ -4,249 +4,260 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบจัดการคลังอะไหล่ (Spare Parts Inventory)</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts (Sarabun) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Sarabun', sans-serif;
-        }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    
+    <style> body { font-family: 'Sarabun', sans-serif; } </style>
 </head>
-<body class="bg-gray-50 text-gray-800 min-h-screen">
+<body class="bg-gray-50 text-gray-800 min-h-screen pb-12">
 
-    <!-- Navigation Bar -->
     <nav class="bg-blue-600 text-white shadow-md">
         <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-xl font-bold flex items-center gap-2">
-                📦 ระบบบันทึกอุปกรณ์อะไหล่ (Spare Parts)
-            </h1>
-            <button onclick="loadInventory()" class="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-lg text-sm font-medium transition duration-200 flex items-center gap-1">
-                🔄 รีเฟรชข้อมูล
-            </button>
+            <h1 class="text-xl font-bold flex items-center gap-2">📦 ระบบบันทึกอุปกรณ์อะไหล่ (Spare Parts)</h1>
+            <button onclick="loadInventory()" class="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-lg text-sm font-medium transition duration-200">🔄 รีเฟรชข้อมูล</button>
         </div>
     </nav>
 
     <div class="max-w-7xl mx-auto px-4 py-8">
-        
-        <!-- API URL Config Alert (จะหายไปถ้าใส่ URL แล้ว) -->
-        <div id="configAlert" class="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-700 rounded-r-lg shadow-sm">
-            <p class="font-semibold">⚠️ เปิดใช้งานระบบ:</p>
-            <p class="text-sm mt-1">กรุณานำ URL ที่ได้จากการ Deploy Google Apps Script มาใส่ในไฟล์แถวที่ 140 (`const WEB_APP_URL = "..."`) เพื่อเชื่อมต่อฐานข้อมูล</p>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
             
-            <!-- ฟอร์มเบิกเข้า / เบิกออก -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-fit">
-                <h2 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2 flex items-center gap-2">
-                    📝 ทำรายการ เบิกเข้า / เบิกออก
-                </h2>
+                <h2 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">📝 ทำรายการ เบิกเข้า / เบิกออก</h2>
                 <form id="transactionForm" onsubmit="handleTransaction(event)">
                     
-                    <!-- เลือกอะไหล่ -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-1">เลือกอะไหล่</label>
-                        <select id="partSelect" required class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                        <select id="partSelect" required class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition">
                             <option value="">-- กำลังโหลดรายการอะไหล่ --</option>
                         </select>
                     </div>
 
-                    <!-- ประเภทรายการ -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-1">ประเภทรายการ</label>
                         <div class="grid grid-cols-2 gap-4">
-                            <label class="flex items-center justify-center p-3 border rounded-lg cursor-pointer hover:bg-green-50 transition border-gray-200" id="labelIn">
-                                <input type="radio" name="actionType" value="IN" checked class="mr-2 text-green-600 focus:ring-green-500">
+                            <label class="flex items-center justify-center p-3 border rounded-lg cursor-pointer hover:bg-green-50 transition border-gray-200">
+                                <input type="radio" name="actionType" value="IN" checked class="mr-2" onchange="toggleVendorField()">
                                 <span class="text-green-700 font-medium">📥 เบิกเข้าคลัง</span>
                             </label>
-                            <label class="flex items-center justify-center p-3 border rounded-lg cursor-pointer hover:bg-red-50 transition border-gray-200" id="labelOut">
-                                <input type="radio" name="actionType" value="OUT" class="mr-2 text-red-600 focus:ring-red-500">
+                            <label class="flex items-center justify-center p-3 border rounded-lg cursor-pointer hover:bg-red-50 transition border-gray-200">
+                                <input type="radio" name="actionType" value="OUT" class="mr-2" onchange="toggleVendorField()">
                                 <span class="text-red-700 font-medium">📤 เบิกออกไปใช้</span>
                             </label>
                         </div>
                     </div>
 
-                    <!-- จำนวน -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-1">จำนวน (ชิ้น)</label>
-                        <input type="number" id="transQty" min="1" required placeholder="ระบุจำนวนชิ้น" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                        <input type="number" id="transQty" min="1" required placeholder="ระบุจำนวนชิ้น" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg">
                     </div>
 
-                    <!-- หมายเหตุ -->
+                    <div class="mb-4" id="vendorContainer">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">แหล่งซื้อ / ผู้จัดจำหน่าย (อัปเดตข้อมูล)</label>
+                        <input type="text" id="transVendor" placeholder="เช่น ร้านสมชาย, ไทวัสดุ" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-1">หมายเหตุ / ผู้เบิก</label>
-                        <input type="text" id="transNote" placeholder="เช่น ซ่อมเครื่องจักรแผนก A, รับเข้าล็อตใหม่" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                        <input type="text" id="transNote" placeholder="เช่น ซ่อมเครื่องจักรแผนก A" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg">
                     </div>
 
-                    <!-- ปุ่มส่งข้อมูล -->
-                    <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition duration-200 shadow-sm">
-                        บันทึกรายการ
-                    </button>
+                    <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition shadow-sm">บันทึกรายการ</button>
                 </form>
             </div>
 
-            <!-- ตารางแสดงข้อมูลอะไหล่คงเหลือ -->
             <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                 <div class="flex justify-between items-center mb-4 border-b pb-2">
-                    <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        📋 รายการอะไหล่ในคลังสินค้า
-                    </h2>
+                    <h2 class="text-lg font-bold text-gray-900">📋 รายการอะไหล่ในคลังสินค้า</h2>
                     <span id="loadingStatus" class="text-sm text-gray-500 italic">กำลังโหลดข้อมูล...</span>
                 </div>
-
-                <!-- ตารางข้อมูล -->
-                <div class="overflow-x-auto rounded-lg border border-gray-100 shadow-inner">
+                <div class="overflow-x-auto rounded-lg border border-gray-100">
                     <table class="w-full text-sm text-left text-gray-500">
-                        <thead class="text-xs text-gray-700 uppercase bg-gray-100 border-b border-gray-200">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-100 border-b">
                             <tr>
-                                <th scope="col" class="px-4 py-3">รหัสอะไหล่</th>
-                                <th scope="col" class="px-4 py-3">ชื่ออะไหล่</th>
-                                <th scope="col" class="px-4 py-3">ตำแหน่งที่เก็บ</th>
-                                <th scope="col" class="px-4 py-3 text-right">ราคา/ชิ้น (บาท)</th>
-                                <th scope="col" class="px-4 py-3 text-center">คงเหลือ (ชิ้น)</th>
-                                <th scope="col" class="px-4 py-3">แหล่งซื้อ / ผู้จัดจำหน่าย</th>
+                                <th class="px-4 py-3">รหัสอะไหล่</th>
+                                <th class="px-4 py-3">ชื่ออะไหล่</th>
+                                <th class="px-4 py-3">ตำแหน่งที่เก็บ</th>
+                                <th class="px-4 py-3 text-center">คงเหลือ (ชิ้น)</th>
+                                <th class="px-4 py-3">แหล่งซื้อ</th>
                             </tr>
                         </thead>
                         <tbody id="inventoryTableBody">
-                            <!-- Data rows will be injected here via JavaScript -->
-                            <tr>
-                                <td colspan="6" class="px-4 py-8 text-center text-gray-400">
-                                    กรุณาใส่ Web App URL ของ Google Apps Script เพื่อดึงข้อมูลคลังสินค้า
-                                </td>
-                            </tr>
+                            <tr><td colspan="5" class="px-4 py-8 text-center text-gray-400">กำลังโหลด...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
+        </div>
 
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <div class="flex justify-between items-center mb-6 border-b pb-2">
+                <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                    🏗️ แผนผังชั้นวางของ (สามารถคลิกค้างแล้วลากเพื่อจัดเรียงตำแหน่งได้)
+                </h2>
+                <span class="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">ลากที่หัวข้อชั้นวาง ✥</span>
+            </div>
+            
+            <div id="shelfMapContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                </div>
         </div>
     </div>
 
-    <!-- JavaScript สำหรับเชื่อมต่อ Google Sheets -->
     <script>
-        // ==========================================
-        // ⚠️ วาง URL ของ Google Apps Script Web App ที่นี่
-        // ==========================================
+        // ⚠️ วาง URL ของ Google Apps Script ของคุณที่นี่ (อย่าลืมตรวจสอบให้ตรงกับของคุณ)
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby9m1VsobxkvJwug77jO8Nnx-1RtSY3PFl-j1laMvlMXgRtm6bxXGjFF5XFmF6wvTvlwA/exec";
-
-        // ตรวจสอบเบื้องต้นว่าผู้ใช้เปลี่ยน URL หรือยัง
-        if (WEB_APP_URL && WEB_APP_URL !== "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE") {
-            document.getElementById('configAlert').classList.add('hidden');
-        }
-
+        
         let inventoryData = [];
 
-        // ฟังก์ชันดึงข้อมูลจาก Google Sheets (GET)
-        async function loadInventory() {
-            if (!WEB_APP_URL || WEB_APP_URL === "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE") return;
+        function toggleVendorField() {
+            const action = document.querySelector('input[name="actionType"]:checked').value;
+            const vendorDiv = document.getElementById('vendorContainer');
+            vendorDiv.style.display = action === 'IN' ? 'block' : 'none';
+        }
 
+        async function loadInventory() {
+            if (!WEB_APP_URL) return;
             const statusText = document.getElementById('loadingStatus');
             const tableBody = document.getElementById('inventoryTableBody');
             const selectDropdown = document.getElementById('partSelect');
-
-            statusText.innerText = "🔄 กำลังอัปเดตข้อมูล...";
+            statusText.innerText = "🔄 กำลังอัปเดต...";
             
             try {
                 const response = await fetch(WEB_APP_URL);
-                if (!response.ok) throw new Error('Network response was not ok');
-                
                 inventoryData = await response.json();
                 
-                // 1. เรนเดอร์ลงตาราง
                 tableBody.innerHTML = "";
-                if (inventoryData.length === 0) {
-                    tableBody.innerHTML = `<tr><td colspan="6" class="px-4 py-4 text-center text-gray-500">ไม่พบข้อมูลอะไหล่ในระบบ</td></tr>`;
-                } else {
-                    inventoryData.forEach(item => {
-                        const row = document.createElement('tr');
-                        row.className = "bg-white border-b hover:bg-gray-50 transition border-gray-100";
-                        row.innerHTML = `
-                            <td class="px-4 py-3 font-medium text-gray-900">${item["รหัสอะไหล่ (ID)"] || item["ID"] || '-'}</td>
-                            <td class="px-4 py-3 font-semibold text-blue-600">${item["ชื่ออะไหล่ (Name)"] || item["Name"] || '-'}</td>
-                            <td class="px-4 py-3"><span class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs border">${item["ตำแหน่ง (Location)"] || item["Location"] || '-'}</span></td>
-                            <td class="px-4 py-3 text-right font-medium text-amber-600">${Number(item["ราคา/ชิ้น (Price)"] || item["Price"] || 0).toLocaleString()} ฿</td>
-                            <td class="px-4 py-3 text-center font-bold ${Number(item["จำนวนคงเหลือ (Qty)"] || item["Qty"] || 0) <= 5 ? 'text-red-600 bg-red-50' : 'text-emerald-600'}">${Number(item["จำนวนคงเหลือ (Qty)"] || item["Qty"] || 0).toLocaleString()}</td>
-                            <td class="px-4 py-3 text-xs text-gray-500">${item["ซื้อที่ไหน (Vendor)"] || item["Vendor"] || '-'}</td>
-                        `;
-                        tableBody.appendChild(row);
-                    });
-                }
+                inventoryData.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.className = "bg-white border-b hover:bg-gray-50";
+                    const qty = Number(item["จำนวนคงเหลือ (Qty)"] || item["Qty"] || 0);
+                    row.innerHTML = `
+                        <td class="px-4 py-3 font-medium text-gray-900">${item["รหัสอะไหล่ (ID)"] || item["ID"] || '-'}</td>
+                        <td class="px-4 py-3 font-semibold text-blue-600">${item["ชื่ออะไหล่ (Name)"] || item["Name"] || '-'}</td>
+                        <td class="px-4 py-3"><span class="bg-gray-100 px-2 py-1 rounded text-xs border">${item["ตำแหน่ง (Location)"] || item["Location"] || '-'}</span></td>
+                        <td class="px-4 py-3 text-center font-bold ${qty <= 5 ? 'text-red-600 bg-red-50' : 'text-emerald-600'}">${qty.toLocaleString()}</td>
+                        <td class="px-4 py-3 text-xs text-gray-500">${item["ซื้อที่ไหน (Vendor)"] || item["Vendor"] || '-'}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
 
-                // 2. เรนเดอร์ลง Dropdown ตัวเลือกฟอร์ม
-                selectDropdown.innerHTML = `<option value="">-- เลือกอะไหล่ที่ต้องการปรับยอด --</option>`;
+                selectDropdown.innerHTML = `<option value="">-- เลือกอะไหล่ --</option>`;
                 inventoryData.forEach(item => {
                     const id = item["รหัสอะไหล่ (ID)"] || item["ID"];
                     const name = item["ชื่ออะไหล่ (Name)"] || item["Name"];
-                    const option = document.createElement('option');
-                    option.value = id;
-                    option.innerText = `[${id}] ${name}`;
-                    selectDropdown.appendChild(option);
+                    selectDropdown.insertAdjacentHTML('beforeend', `<option value="${id}">[${id}] ${name}</option>`);
                 });
 
-                statusText.innerText = "✅ ข้อมูลเป็นปัจจุบัน";
+                renderShelfMap();
+                statusText.innerText = "✅ ข้อมูลล่าสุด";
             } catch (error) {
-                console.error('Error fetching inventory:', error);
+                console.error(error);
                 statusText.innerText = "❌ โหลดข้อมูลล้มเหลว";
-                alert("ไม่สามารถดึงข้อมูลจาก Google Sheets ได้ กรุณาตรวจสอบการตั้งค่าสิทธิ์ Web App");
             }
         }
 
-        // ฟังก์ชันส่งรายการเบิกเข้า/ออกไปยัง Google Sheets (POST)
+        // ⭐️ ฟังก์ชันวาดแผนผัง พร้อมเปิดใช้งานระบบลาก-วาง
+        function renderShelfMap() {
+            const mapContainer = document.getElementById('shelfMapContainer');
+            mapContainer.innerHTML = '';
+            
+            // 1. จัดกลุ่มอะไหล่ตาม Location
+            const shelves = {};
+            inventoryData.forEach(item => {
+                const loc = item["ตำแหน่ง (Location)"] || item["Location"] || 'ไม่ได้ระบุตำแหน่ง';
+                if (!shelves[loc]) shelves[loc] = [];
+                shelves[loc].push(item);
+            });
+
+            // 2. ดึงลำดับชั้นวางที่เคยจัดไว้จาก Local Storage
+            let savedOrder = JSON.parse(localStorage.getItem('shelfOrder')) || [];
+            let currentLocations = Object.keys(shelves);
+            
+            // 3. เรียงลำดับตามที่บันทึกไว้ (ถ้ามีชั้นวางใหม่ ให้ต่อท้าย)
+            let finalOrder = savedOrder.filter(loc => currentLocations.includes(loc));
+            currentLocations.forEach(loc => {
+                if (!finalOrder.includes(loc)) finalOrder.push(loc);
+            });
+
+            // 4. สร้างกล่องตามลำดับ
+            finalOrder.forEach(location => {
+                const items = shelves[location];
+                // เพิ่มคลาส drag-handle เพื่อให้รู้ว่าตรงไหนจับลากได้
+                let html = `
+                <div class="shelf-card border-2 border-slate-300 rounded-xl p-4 bg-slate-50 flex flex-col h-full shadow-sm hover:shadow-lg transition bg-white" data-id="${location}">
+                    <div class="drag-handle cursor-move bg-slate-700 text-white text-center py-2 rounded-t-lg font-bold mb-3 shadow-inner flex items-center justify-center gap-2 hover:bg-slate-800 transition">
+                        <span class="text-slate-400 text-sm">✥</span> 📍 ${location}
+                    </div>
+                    <div class="flex-1 space-y-2 cursor-default">`;
+                
+                items.forEach(i => {
+                    const name = i["ชื่ออะไหล่ (Name)"] || i["Name"];
+                    const qty = Number(i["จำนวนคงเหลือ (Qty)"] || i["Qty"] || 0);
+                    const isLowStock = qty <= 5;
+                    const badgeClass = isLowStock ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white';
+                    const boxClass = isLowStock ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white';
+                    
+                    html += `
+                        <div class="flex justify-between items-center text-sm p-2 rounded-lg border ${boxClass}">
+                            <span class="truncate font-medium pr-2 text-gray-700">${name}</span>
+                            <span class="font-bold px-2 py-0.5 rounded-md ${badgeClass}">${qty}</span>
+                        </div>`;
+                });
+                
+                html += `</div>
+                    <div class="mt-3 text-xs text-center text-gray-400 border-t pt-2">ฐานชั้นวาง</div>
+                </div>`;
+                mapContainer.insertAdjacentHTML('beforeend', html);
+            });
+
+            // 5. เปิดใช้งาน SortableJS
+            new Sortable(mapContainer, {
+                animation: 200, // ความสมูทตอนสลับที่ (ms)
+                handle: '.drag-handle', // ให้จับลากได้เฉพาะตรงหัวข้อสีเทาเข้ม
+                ghostClass: 'opacity-50', // ทำโปร่งใสตอนกำลังลาก
+                onEnd: function (evt) {
+                    // เมื่อลากวางเสร็จ ให้บันทึกลำดับใหม่ลง Local Storage
+                    const itemEls = mapContainer.querySelectorAll('.shelf-card');
+                    const newOrder = Array.from(itemEls).map(el => el.getAttribute('data-id'));
+                    localStorage.setItem('shelfOrder', JSON.stringify(newOrder));
+                },
+            });
+        }
+
         async function handleTransaction(event) {
             event.preventDefault();
-            if (!WEB_APP_URL) {
-    alert("กรุณาใส่ Web App URL ก่อนทำรายการ");
-    return;
-}
+            if (!WEB_APP_URL) return alert("กรุณาใส่ Web App URL");
 
             const id = document.getElementById('partSelect').value;
             const action = document.querySelector('input[name="actionType"]:checked').value;
             const qty = document.getElementById('transQty').value;
             const note = document.getElementById('transNote').value;
+            const vendor = action === 'IN' ? document.getElementById('transVendor').value : ""; 
             const submitBtn = document.getElementById('submitBtn');
 
-            if (!id) {
-                alert("กรุณาเลือกอะไหล่");
-                return;
-            }
+            if (!id) return alert("กรุณาเลือกอะไหล่");
 
-            // ปิดปุ่มระหว่างส่งข้อมูลเพื่อป้องกันการกดซ้ำ (Debounce)
             submitBtn.disabled = true;
             submitBtn.innerText = "⏳ กำลังบันทึกข้อมูล...";
 
-            const payload = {
-                action: action,
-                id: id,
-                qty: qty,
-                note: note
-            };
-
             try {
-                // ส่งแบบ text/plain เพื่อเลี่ยงปัญหา CORS Preflight OPTIONS ใน Apps Script
                 const response = await fetch(WEB_APP_URL, {
                     method: 'POST',
                     redirect: 'follow',
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({ action, id, qty, note, vendor })
                 });
 
                 const result = await response.json();
-                
                 if (result.status === "success") {
                     alert("บันทึกข้อมูลเรียบร้อยแล้ว!");
-                    // รีเซ็ตฟอร์มยกเว้นตัวเลือกอะไหล่
                     document.getElementById('transQty').value = "";
                     document.getElementById('transNote').value = "";
-                    // โหลดข้อมูลตารางใหม่
+                    document.getElementById('transVendor').value = "";
                     await loadInventory();
                 } else {
                     alert("เกิดข้อผิดพลาด: " + result.message);
                 }
             } catch (error) {
-                console.error('Error submitting transaction:', error);
                 alert("ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
             } finally {
                 submitBtn.disabled = false;
@@ -254,7 +265,6 @@
             }
         }
 
-        // โหลดข้อมูลเมื่อเปิดหน้าเว็บครั้งแรก
         window.onload = loadInventory;
     </script>
 </body>
