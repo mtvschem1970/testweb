@@ -1,788 +1,1105 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WMS — ระบบบริหารคลังสินค้า</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#0f1117;
-  --bg2:#161b27;
-  --bg3:#1e2535;
-  --bg4:#252d40;
-  --border:#2a3350;
-  --border2:#344060;
-  --accent:#3b82f6;
-  --accent2:#1d4ed8;
-  --accent-dim:rgba(59,130,246,.12);
-  --text:#e8ecf4;
-  --text2:#8b97b5;
-  --text3:#5a6680;
-  --green:#22c55e;
-  --green-dim:rgba(34,197,94,.12);
-  --red:#f43f5e;
-  --red-dim:rgba(244,63,94,.12);
-  --amber:#f59e0b;
-  --amber-dim:rgba(245,158,11,.12);
-  --radius:6px;
-  --radius-lg:10px;
-  --font:'IBM Plex Sans Thai',sans-serif;
-  --mono:'IBM Plex Mono',monospace;
-}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5}
-
-/* ─── LAYOUT ─────────────────────────────── */
-.app{display:flex;height:100vh;overflow:hidden}
-.sidebar{width:220px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;transition:width .2s}
-.sidebar-logo{padding:20px 16px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
-.logo-icon{width:32px;height:32px;background:var(--accent);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.logo-text{font-size:13px;font-weight:600;letter-spacing:.04em;color:var(--text)}
-.logo-sub{font-size:10px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase}
-.nav{flex:1;padding:12px 8px;overflow-y:auto}
-.nav-section{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);padding:8px 8px 4px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius);cursor:pointer;transition:background .15s,color .15s;color:var(--text2);font-size:13px;font-weight:500;border:none;background:none;width:100%;text-align:left}
-.nav-item:hover{background:var(--bg3);color:var(--text)}
-.nav-item.active{background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent)1a}
-.nav-item .icon{width:16px;text-align:center;font-size:15px;flex-shrink:0}
-.sidebar-footer{padding:12px 8px;border-top:1px solid var(--border)}
-.status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;box-shadow:0 0 6px var(--green)}
-
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-.topbar{height:52px;flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px}
-.topbar-title{font-size:14px;font-weight:600;color:var(--text)}
-.topbar-subtitle{font-size:12px;color:var(--text3);margin-left:4px}
-.topbar-spacer{flex:1}
-.search-wrap{position:relative}
-.search-wrap input{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 12px 6px 32px;border-radius:var(--radius);font-size:13px;font-family:var(--font);outline:none;width:220px;transition:border .15s}
-.search-wrap input:focus{border-color:var(--accent)}
-.search-wrap input::placeholder{color:var(--text3)}
-.search-ico{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;pointer-events:none}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);font-size:12px;font-weight:500;font-family:var(--font);cursor:pointer;transition:all .15s;border:1px solid transparent;white-space:nowrap}
-.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
-.btn-primary:hover{background:var(--accent2)}
-.btn-ghost{background:transparent;color:var(--text2);border-color:var(--border)}
-.btn-ghost:hover{background:var(--bg3);color:var(--text)}
-.btn-success{background:var(--green-dim);color:var(--green);border-color:var(--green)33}
-.btn-success:hover{background:var(--green);color:#fff}
-.btn-sm{padding:5px 10px;font-size:11px}
-
-.content{flex:1;overflow-y:auto;padding:20px}
-.panel{display:none}
-.panel.active{display:block}
-
-/* STATS & CARDS */
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;position:relative;overflow:hidden}
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
-.stat-card.blue::before{background:var(--accent)}
-.stat-card.green::before{background:var(--green)}
-.stat-card.red::before{background:var(--red)}
-.stat-card.amber::before{background:var(--amber)}
-.stat-label{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
-.stat-value{font-size:26px;font-weight:600;color:var(--text);font-family:var(--mono);line-height:1}
-.stat-sub{font-size:11px;color:var(--text3);margin-top:4px}
-
-.two-col{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg)}
-.card-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.card-title{font-size:13px;font-weight:600;letter-spacing:.02em}
-.card-body{padding:16px}
-.form-group{margin-bottom:14px}
-.form-label{display:block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
-.form-control{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:var(--radius);font-size:13px;font-family:var(--font);outline:none;transition:border .15s}
-.form-control:focus{border-color:var(--accent)}
-select.form-control option{background:var(--bg3)}
-.radio-group{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.radio-card{position:relative}
-.radio-card input{position:absolute;opacity:0;pointer-events:none}
-.radio-card label{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .15s;font-size:12px;font-weight:500;color:var(--text2)}
-.radio-card input:checked+label{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
-.divider{height:1px;background:var(--border);margin:12px 0}
-
-/* TABLE */
-.table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse}
-thead th{padding:10px 12px;text-align:left;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);white-space:nowrap}
-tbody tr{border-bottom:1px solid var(--border)44;transition:background .1s}
-tbody tr:hover{background:var(--bg3)}
-tbody td{padding:10px 12px;font-size:13px;vertical-align:middle}
-.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:var(--mono)}
-.badge-loc{background:var(--bg4);color:var(--text2);border:1px solid var(--border)}
-.badge-ok{background:var(--green-dim);color:var(--green)}
-.badge-warn{background:var(--amber-dim);color:var(--amber)}
-.badge-danger{background:var(--red-dim);color:var(--red)}
-.badge-in{background:var(--green-dim);color:var(--green)}
-.badge-out{background:var(--red-dim);color:var(--red)}
-.code{font-family:var(--mono);font-size:12px;color:var(--text2)}
-
-/* 2D MAP */
-.map-toolbar{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.map-search-wrap{position:relative;flex:1;min-width:200px}
-.map-search-wrap input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:7px 10px 7px 30px;border-radius:var(--radius);font-size:13px;outline:none;}
-.map-search-wrap input:focus{border-color:#fff;}
-.map-search-ico{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;}
-#roomCanvas{position:relative;background:var(--bg);background-image:radial-gradient(var(--border) 1px,transparent 1px);background-size:20px 20px;height:650px;overflow:hidden}
-
-.shelf-box{position:absolute;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);user-select:none;transition:border-color .2s,box-shadow .2s,transform .15s;display:flex;flex-direction:column;resize:both;overflow:hidden;min-width:140px;min-height:100px}
-.shelf-box:hover{border-color:var(--border2)}
-
-.drag-handle{cursor:grab;background:var(--bg3);padding:8px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.drag-handle:active{cursor:grabbing}
-.shelf-title{font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px}
-.shelf-title .dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0}
-
-/* ⭐️ อัปเดตปุ่มในหัวข้อตู้ */
-.shelf-actions { display: flex; gap: 6px; align-items: center; }
-.shelf-btn{background:none;border:none;color:var(--text3);cursor:pointer;padding:2px;font-size:13px;line-height:1;transition:color .15s}
-.shelf-btn:hover{color:var(--accent)}
-.shelf-del{background:none;border:none;color:var(--text3);cursor:pointer;padding:2px;font-size:12px;line-height:1;transition:color .15s}
-.shelf-del:hover{color:var(--red)}
-
-.shelf-levels{flex:1;display:flex;flex-direction:column;position:relative}
-.shelf-level-row{flex:1;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);opacity:0.6;font-weight:500;letter-spacing:0.05em}
-.shelf-level-row:last-child{border-bottom:none}
-
-.highlight-shelf{border-color:#ffffff!important;box-shadow:0 0 15px rgba(255,255,255,0.7), inset 0 0 25px rgba(255,255,255,0.3)!important;transform:scale(1.02);z-index:50!important}
-.search-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:12px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:10}
-.highlight-shelf .search-overlay{opacity:1;pointer-events:auto;backdrop-filter:blur(2px)}
-.loc-badge{background:#fff;color:#000;font-size:14px;font-weight:700;padding:4px 10px;border-radius:4px;margin-bottom:6px;box-shadow:0 2px 10px rgba(255,255,255,0.4)}
-.loc-qty{color:#a7f3d0;font-size:12px;font-family:var(--mono);font-weight:600}
-.loc-sub{font-size:11px;color:#cbd5e1;margin-top:6px}
-
-#toast{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-.toast-item{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:12px 16px;border-radius:var(--radius-lg);font-size:13px;min-width:240px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:slideIn .2s ease}
-@keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
-.toast-dot{width:8px;height:8px;border-radius:50%}
-.toast-item.ok{border-color:var(--green)44}.toast-item.ok .toast-dot{background:var(--green)}
-.toast-item.err{border-color:var(--red)44}.toast-item.err .toast-dot{background:var(--red)}
-
-.loading-row td{text-align:center;padding:32px;color:var(--text3)}
-.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
-@keyframes spin{to{transform:rotate(360deg)}}
-::-webkit-scrollbar{width:6px;height:6px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
-.refresh-ico{display:inline-block;transition:transform .4s}
-.refreshing .refresh-ico{transform:rotate(360deg)}
-</style>
-</head>
-<body>
-
-<div class="app">
-  <aside class="sidebar">
-    <div class="sidebar-logo">
-      <div class="logo-icon">📦</div>
-      <div>
-        <div class="logo-text">WMS Pro</div>
-        <div class="logo-sub">คลังสินค้า</div>
-      </div>
-    </div>
-    <nav class="nav">
-      <div class="nav-section">หลัก</div>
-      <button class="nav-item active" onclick="switchPanel('dashboard',this)"><span class="icon">▦</span> ภาพรวม</button>
-      <button class="nav-item" onclick="switchPanel('transaction',this)"><span class="icon">⇅</span> ทำรายการ</button>
-      <button class="nav-item" onclick="switchPanel('inventory',this)"><span class="icon">≡</span> สต๊อกสินค้า</button>
-      <div class="nav-section" style="margin-top:8px">แผนที่</div>
-      <button class="nav-item" onclick="switchPanel('map',this)"><span class="icon">⊞</span> แผนผังห้อง</button>
-      <div class="nav-section" style="margin-top:8px">รายงาน</div>
-      <button class="nav-item" onclick="switchPanel('logs',this)"><span class="icon">☰</span> ประวัติรายการ</button>
-    </nav>
-    <div class="sidebar-footer">
-      <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--radius);background:var(--bg3)">
-        <div class="status-dot"></div>
-        <div>
-          <div style="font-size:11px;font-weight:500;color:var(--text)">เชื่อมต่อแล้ว</div>
-          <div style="font-size:10px;color:var(--text3)" id="lastSyncText">—</div>
-        </div>
-      </div>
-    </div>
-  </aside>
-
-  <div class="main">
-    <div class="topbar">
-      <div>
-        <span class="topbar-title" id="topbarTitle">ภาพรวม</span>
-        <span class="topbar-subtitle" id="topbarSub">/ ระบบบริหารคลังสินค้า</span>
-      </div>
-      <div class="topbar-spacer"></div>
-      <div class="search-wrap">
-        <span class="search-ico">🔍</span>
-        <input type="text" placeholder="ค้นหารหัส / ชื่ออะไหล่..." id="globalSearch" oninput="handleGlobalSearch()">
-      </div>
-      <button class="btn btn-ghost" id="refreshBtn" onclick="loadData()">
-        <span class="refresh-ico" id="refreshIco">↻</span> รีเฟรช
-      </button>
-    </div>
-
-    <div class="content">
-
-      <div id="panel-dashboard" class="panel active">
-        <div class="stats-row">
-          <div class="stat-card blue"><div class="stat-label">รายการทั้งหมด</div><div class="stat-value" id="statTotal">—</div><div class="stat-sub">ประเภทอะไหล่</div></div>
-          <div class="stat-card green"><div class="stat-label">สินค้าคงเหลือ</div><div class="stat-value" id="statStock">—</div><div class="stat-sub">ชิ้นรวมทั้งคลัง</div></div>
-          <div class="stat-card red"><div class="stat-label">ใกล้หมด</div><div class="stat-value" id="statLow">—</div><div class="stat-sub">รายการที่ ≤ 5 ชิ้น</div></div>
-          <div class="stat-card amber"><div class="stat-label">รายการวันนี้</div><div class="stat-value" id="statToday">—</div><div class="stat-sub">ธุรกรรมล่าสุด</div></div>
-        </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">⚠ รายการใกล้หมดสต๊อก (≤ 5 ชิ้น)</span></div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>รหัส</th><th>ชื่ออะไหล่</th><th>ตำแหน่ง</th><th>คงเหลือ</th></tr></thead>
-              <tbody id="lowStockBody"><tr class="loading-row"><td colspan="4"><span class="spinner"></span>กำลังโหลด...</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div id="panel-transaction" class="panel">
-        <div class="two-col">
-          <div class="card">
-            <div class="card-header"><span class="card-title">ทำรายการเบิก เข้า / ออก</span></div>
-            <div class="card-body">
-              <form onsubmit="handleTransaction(event)">
-                <div class="form-group">
-                  <label class="form-label">เลือกอะไหล่</label>
-                  <select id="partSelect" required class="form-control"><option value="">— รอโหลดข้อมูล —</option></select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">ประเภทรายการ</label>
-                  <div class="radio-group">
-                    <div class="radio-card"><input type="radio" name="actionType" id="typeIN" value="IN" checked onchange="toggleVendor()"><label for="typeIN">📥 เบิกเข้า</label></div>
-                    <div class="radio-card"><input type="radio" name="actionType" id="typeOUT" value="OUT" onchange="toggleVendor()"><label for="typeOUT">📤 เบิกออก</label></div>
-                  </div>
-                </div>
-                <div class="form-group"><label class="form-label">จำนวน (ชิ้น)</label><input type="number" id="transQty" min="1" required class="form-control" placeholder="0"></div>
-                <div class="form-group" id="vendorContainer"><label class="form-label">แหล่งซื้อ / Vendor</label><input type="text" id="transVendor" class="form-control" placeholder="ชื่อผู้จำหน่าย"></div>
-                <div class="form-group"><label class="form-label">หมายเหตุ / ผู้เบิก</label><input type="text" id="transNote" required class="form-control" placeholder="ชื่อผู้เบิก หรือ หมายเหตุ"></div>
-                <div class="divider"></div>
-                <button type="submit" id="submitBtn" class="btn btn-primary" style="width:100%;justify-content:center">บันทึกรายการ</button>
-              </form>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">สต๊อกสินค้าทั้งหมด</span>
-              <span style="font-size:11px;color:var(--text3)" id="invCount">—</span>
-            </div>
-            <div class="table-wrap">
-              <table>
-                <thead><tr><th>รหัส</th><th>ชื่ออะไหล่</th><th>ตำแหน่ง</th><th style="text-align:right">คงเหลือ</th></tr></thead>
-                <tbody id="txInventoryBody"><tr class="loading-row"><td colspan="4"><span class="spinner"></span>กำลังโหลด...</td></tr></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div id="panel-inventory" class="panel">
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">สต๊อกสินค้า</span>
-            <input type="text" id="invSearch" oninput="filterInventory()" placeholder="ค้นหา..." class="form-control" style="width:180px;padding:5px 9px;font-size:12px">
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>รหัส</th><th>ชื่ออะไหล่</th><th>ตำแหน่ง</th><th style="text-align:right">คงเหลือ</th><th>สถานะ</th></tr></thead>
-              <tbody id="inventoryBody"><tr class="loading-row"><td colspan="5"><span class="spinner"></span>กำลังโหลด...</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div id="panel-map" class="panel" style="padding:0;margin:-20px">
-        <div class="card" style="border-radius:0;border:none;border-bottom:1px solid var(--border)">
-          <div class="map-toolbar">
-            <div class="map-search-wrap">
-              <span class="map-search-ico">🔍</span>
-              <input type="text" id="searchMapInput" onkeyup="searchAndHighlight()" placeholder="พิมพ์ตำแหน่ง หรือ ชื่ออะไหล่ เพื่อค้นหาพิกัดตู้...">
-            </div>
-            <button class="btn btn-success btn-sm" onclick="addNewShelf()">＋ เพิ่มตู้ใหม่</button>
-            <button class="btn btn-ghost btn-sm" onclick="resetLayout()">↺ ล้างพิกัดตู้ทั้งหมด</button>
-          </div>
-          <div id="roomCanvas"></div>
-          <div style="padding:8px 16px;border-top:1px solid var(--border);display:flex;align-items:center;font-size:11px;color:var(--text3);justify-content:space-between">
-            <div style="display:flex;gap:12px">
-              <span>💡 คลิกค้างที่แถบชื่อตู้เพื่อลากย้าย (Snap 20px)</span>
-              <span>↔ ลากที่มุมขวาล่างของตู้เพื่อปรับขนาดความกว้าง/ยาว</span>
-              <span>⧉ กดเพื่อคัดลอกตู้ขนาดเดิมเป๊ะๆ</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div id="panel-logs" class="panel">
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">ประวัติการเบิกเข้า-ออก</span>
-            <span style="font-size:11px;color:var(--text3)" id="logCount">—</span>
-          </div>
-          <div class="table-wrap" style="max-height:620px;overflow-y:auto">
-            <table>
-              <thead style="position:sticky;top:0;z-index:1;background:var(--bg2)"><tr><th>วัน/เวลา</th><th>รหัสอะไหล่</th><th>ประเภท</th><th style="text-align:right">จำนวน</th><th>ผู้เบิก / หมายเหตุ</th></tr></thead>
-              <tbody id="logsBody"><tr class="loading-row"><td colspan="5"><span class="spinner"></span>กำลังโหลด...</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<div id="toast"></div>
-
-<script>
-// ⚠️ ใส่ URL ของคุณ
-const WEB_APP_URL="https://script.google.com/macros/s/AKfycby9m1VsobxkvJwug77jO8Nnx-1RtSY3PFl-j1laMvlMXgRtm6bxXGjFF5XFmF6wvTvlwA/exec";
-
-let globalInventory=[];
-let globalLogs=[];
-let roomLayout=JSON.parse(localStorage.getItem('wmsLayout3'))||{}; 
-let currentPanel='dashboard';
-let invFilteredData=[];
-
-const PANEL_TITLES={dashboard:'ภาพรวม',transaction:'ทำรายการ',inventory:'สต๊อกสินค้า',map:'แผนผังห้อง',logs:'ประวัติรายการ'};
-function switchPanel(id,btn){
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById('panel-'+id).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
-  if(btn) btn.classList.add('active');
-  currentPanel=id;
-  document.getElementById('topbarTitle').textContent=PANEL_TITLES[id]||id;
-  if(id==='map') render2DMap();
-}
-
-function toast(msg,type='ok'){
-  const t=document.getElementById('toast');
-  const el=document.createElement('div');
-  el.className=`toast-item ${type}`;
-  el.innerHTML=`<div class="toast-dot"></div><span>${msg}</span>`;
-  t.appendChild(el);
-  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(()=>el.remove(),300)},3000);
-}
-
-// ⭐️ ระบบจำลองข้อมูลเยอะๆ ให้หน้าเว็บอัตโนมัติ 
-function generateDummyData() {
-  const zones = ['A', 'B', 'C', 'D', 'E'];
-  const types = ['น็อต M4', 'วาล์วทองเหลือง', 'สวิตช์ปุ่มกด', 'มอเตอร์ 12V', 'ลูกปืน', 'เซ็นเซอร์แสง', 'โอริง', 'สายไฟ 2mm', 'ข้อต่อ PVC'];
-  const brands = ['(แท้)', '(เทียม)', 'SMC', 'Omron', 'Panasonic', 'Mitsubishi'];
-
-  let mockItems = [];
-  for(let i=1; i<=100; i++) {
-    const z = zones[Math.floor(Math.random()*zones.length)];
-    const cab = Math.floor(Math.random()*5)+1; // ตู้เบอร์ 1-5
-    const lvl = Math.floor(Math.random()*6)+1; // ชั้น 1-6
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maintenance System (Firebase Powered)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
     
-    // สร้างตำแหน่ง (ตัวอย่างเช่น "ตู้ A-1 ชั้น 3")
-    const loc = `ตู้ ${z}-${cab} ชั้น ${lvl}`;
-    
-    const t = types[Math.floor(Math.random()*types.length)];
-    const b = brands[Math.floor(Math.random()*brands.length)];
-    const qty = Math.floor(Math.random()*80); // สุ่มจำนวน 0-79
+    <!-- Firebase V9 Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
-    mockItems.push({
-      "รหัสอะไหล่ (ID)": `TEST-${i.toString().padStart(3,'0')}`,
-      "ชื่ออะไหล่ (Name)": `${t} ${b} รุ่นทดสอบ`,
-      "ตำแหน่ง (Location)": loc,
-      "จำนวนคงเหลือ (Qty)": qty
-    });
-  }
-  
-  // สร้างตู้แผนผังจำลองให้ตรงกับข้อมูลที่สุ่มขึ้นมา
-  zones.forEach(z => {
-      for(let i=1; i<=3; i++) {
-          let name = `ตู้ ${z}-${i}`;
-          if(!roomLayout[name]) {
-              roomLayout[name] = { x: (zones.indexOf(z) * 200) + 20, y: (i * 180) - 140, w: 160, h: 140, levels: 6 };
-          }
-      }
-  });
-  localStorage.setItem('wmsLayout3', JSON.stringify(roomLayout));
-
-  return mockItems;
-}
-
-async function loadData(){
-  const btn=document.getElementById('refreshBtn');
-  const ico=document.getElementById('refreshIco');
-  btn.disabled=true;
-  ico.classList.add('refreshing');
-  try{
-    const res=await fetch(WEB_APP_URL,{cache:'no-store'});
-    const data=await res.json();
-    globalInventory=data.inventory||[];
-    globalLogs=data.logs||[];
-
-    // ⭐️ เพิ่มข้อมูลจำลอง 100 รายการ ต่อท้ายข้อมูลจริง
-    const dummyData = generateDummyData();
-    globalInventory = [...globalInventory, ...dummyData];
-    
-    invFilteredData=[...globalInventory];
-
-    renderDashboard();
-    renderInventory();
-    renderTxInventory();
-    renderLogs();
-    populateSelect();
-
-    const now=new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
-    document.getElementById('lastSyncText').textContent='ซิงค์ '+now;
-    if(currentPanel==='map') render2DMap();
-  }catch(e){
-    toast('โหลดข้อมูลไม่สำเร็จ — ตรวจสอบการเชื่อมต่อ','err');
-  }finally{
-    btn.disabled=false;
-    ico.classList.remove('refreshing');
-  }
-}
-
-function getId(i){return i["รหัสอะไหล่ (ID)"]||i["ID"]||''}
-function getName(i){return i["ชื่ออะไหล่ (Name)"]||i["Name"]||''}
-function getLoc(i){return String(i["ตำแหน่ง (Location)"]||i["Location"]||'-')}
-function getQty(i){return Number(i["จำนวนคงเหลือ (Qty)"]||i["Qty"]||0)}
-
-function renderDashboard(){
-  const low=globalInventory.filter(i=>getQty(i)<=5);
-  const totalQty=globalInventory.reduce((s,i)=>s+getQty(i),0);
-  const today=new Date().toDateString();
-  const todayLogs=globalLogs.filter(l=>{
-    const d=new Date(l["วันเวลา (Timestamp)"]||l["Timestamp"]);
-    return d.toDateString()===today;
-  });
-
-  document.getElementById('statTotal').textContent=globalInventory.length;
-  document.getElementById('statStock').textContent=totalQty.toLocaleString();
-  document.getElementById('statLow').textContent=low.length;
-  document.getElementById('statToday').textContent=todayLogs.length;
-
-  const tbody=document.getElementById('lowStockBody');
-  if(!low.length){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text3)">✓ ไม่มีรายการใกล้หมด</td></tr>';return;}
-  // โชว์แค่ 10 รายการในหน้า Dashboard กันหน้าเว็บยาวเกิน
-  tbody.innerHTML=low.slice(0,10).map(i=>`<tr><td class="code">${getId(i)}</td><td style="font-weight:500">${getName(i)}</td><td><span class="badge badge-loc">${getLoc(i)}</span></td><td><span class="badge badge-danger">${getQty(i)}</span></td></tr>`).join('');
-}
-
-function renderInventory(){
-  const tbody=document.getElementById('inventoryBody');
-  if(!globalInventory.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text3)">ไม่มีข้อมูล</td></tr>';return;}
-  
-  let html = '';
-  // โชว์ทีละเยอะๆ ระวังค้าง เลยให้ใช้ innerHTML ทีเดียว
-  invFilteredData.forEach(i=>{
-    const id=getId(i),name=getName(i),loc=getLoc(i),qty=getQty(i);
-    const qtyBadge=qty<=0?'badge-danger':qty<=5?'badge-warn':'badge-ok';
-    const status=qty<=0?'หมด':qty<=5?'ใกล้หมด':'ปกติ';
-    const statBadge=qty<=0?'badge-danger':qty<=5?'badge-warn':'badge-ok';
-    html += `<tr><td class="code">${id}</td><td style="font-weight:500;color:var(--text)">${name}</td><td><span class="badge badge-loc">${loc}</span></td><td style="text-align:right"><span class="badge ${qtyBadge}">${qty}</span></td><td><span class="badge ${statBadge}">${status}</span></td></tr>`;
-  });
-  tbody.innerHTML = html;
-  document.getElementById('invCount').textContent=invFilteredData.length+' รายการ';
-}
-
-function filterInventory(){
-  const kw=document.getElementById('invSearch').value.toLowerCase().trim();
-  invFilteredData=kw?globalInventory.filter(i=>getId(i).toLowerCase().includes(kw)||getName(i).toLowerCase().includes(kw)||getLoc(i).toLowerCase().includes(kw)):[...globalInventory];
-  renderInventory();
-}
-
-function renderTxInventory(){
-  const tbody=document.getElementById('txInventoryBody');
-  if(!globalInventory.length){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text3)">ไม่มีข้อมูล</td></tr>';return;}
-  
-  let html = '';
-  // จำกัดแสดงผลตอนทำรายการแค่ของที่มีจริง
-  globalInventory.slice(0,200).forEach(i=>{
-    const qty=getQty(i);
-    const qtyBadge=qty<=0?'badge-danger':qty<=5?'badge-warn':'badge-ok';
-    html += `<tr><td class="code">${getId(i)}</td><td style="font-weight:500">${getName(i)}</td><td><span class="badge badge-loc">${getLoc(i)}</span></td><td style="text-align:right"><span class="badge ${qtyBadge}">${qty}</span></td></tr>`;
-  });
-  tbody.innerHTML = html;
-}
-
-function populateSelect(){
-  const sel=document.getElementById('partSelect');
-  sel.innerHTML='<option value="">— เลือกอะไหล่ —</option>';
-  globalInventory.forEach(i=>sel.insertAdjacentHTML('beforeend',`<option value="${getId(i)}">[${getId(i)}] ${getName(i)}</option>`));
-}
-
-function renderLogs(){
-  const tbody=document.getElementById('logsBody');
-  document.getElementById('logCount').textContent=globalLogs.length+' รายการ';
-  if(!globalLogs.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text3)">ไม่มีประวัติ</td></tr>';return;}
-  tbody.innerHTML=[...globalLogs].reverse().map(log=>{
-    const dateStr=new Date(log["วันเวลา (Timestamp)"]||log["Timestamp"]).toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'});
-    const action=log["ประเภท (Action)"]||log["Action"]||'';
-    const cls=action.includes("เข้า")?'badge-in':'badge-out';
-    return `<tr><td class="log-timestamp">${dateStr}</td><td class="code">${log["รหัสอะไหล่ (ID)"]||log["ID"]||''}</td><td><span class="badge ${cls}">${action}</span></td><td style="text-align:right;font-family:var(--mono);font-weight:600">${log["จำนวน (Qty)"]||log["Qty"]||0}</td><td style="color:var(--text2)">${log["หมายเหตุ (Note)"]||log["Note"]||''}</td></tr>`;
-  }).join('');
-}
-
-function toggleVendor(){
-  const act=document.querySelector('input[name="actionType"]:checked').value;
-  document.getElementById('vendorContainer').style.display=act==='IN'?'block':'none';
-}
-
-async function handleTransaction(event){
-  event.preventDefault();
-  const id=document.getElementById('partSelect').value;
-  
-  // ป้องกันการยิง MOCK ไปลง Google Sheets จริงๆ จะได้ไม่พัง
-  if(id.startsWith('TEST-')) {
-      alert("อะไหล่นี้เป็นข้อมูลจำลองสำหรับเทสระบบแผนผัง ไม่สามารถบันทึกลง Google Sheets จริงได้ครับ\nให้เลือกอะไหล่ SP-001 หรือของที่คุณสร้างเองเพื่อเทสการเซฟแทน");
-      return;
-  }
-
-  const action=document.querySelector('input[name="actionType"]:checked').value;
-  const qty=document.getElementById('transQty').value;
-  const note=document.getElementById('transNote').value;
-  const vendor=action==='IN'?document.getElementById('transVendor').value:'';
-  const btn=document.getElementById('submitBtn');
-  btn.disabled=true;btn.textContent='⏳ กำลังบันทึก...';
-  try{
-    const res=await fetch(WEB_APP_URL,{method:'POST',body:JSON.stringify({action,id,qty,note,vendor})});
-    const result=await res.json();
-    if(result.status==='success'){
-      toast('บันทึกรายการสำเร็จ ✓','ok');
-      document.getElementById('transQty').value='';
-      document.getElementById('transNote').value='';
-      document.getElementById('transVendor').value='';
-      await loadData();
-    }else{toast('ผิดพลาด: '+(result.message||'unknown'),'err');}
-  }catch(e){toast('ส่งข้อมูลไม่สำเร็จ','err');}
-  btn.disabled=false;btn.textContent='บันทึกรายการ';
-}
-
-// ─── MAP SYSTEM ─────────────────────────────────────────────
-function render2DMap(){
-  const canvas=document.getElementById('roomCanvas');
-  canvas.innerHTML='';
-
-  const allShelfNames=Object.keys(roomLayout);
-  let newX=20,newY=20;
-
-  allShelfNames.forEach(shelfName=>{
-    const pos=roomLayout[shelfName]||{x:newX,y:newY,w:160,h:140,levels:4};
-    if(!roomLayout[shelfName]){newX+=180;if(newX>780){newX=20;newY+=160;}}
-
-    const lvls = pos.levels || 4;
-    let levelHtml = '';
-    for(let i=lvls; i>=1; i--) {
-        levelHtml += `<div class="shelf-level-row">ชั้น ${i}</div>`;
-    }
-
-    const div=document.createElement('div');
-    div.className='shelf-box';
-    div.style.cssText=`left:${pos.x}px; top:${pos.y}px; width:${pos.w}px; height:${pos.h}px;`;
-    div.dataset.name=shelfName;
-    
-    // ⭐️ เพิ่มปุ่ม Clone (⧉)
-    div.innerHTML=`
-      <div class="drag-handle">
-        <span class="shelf-title"><span class="dot"></span>${shelfName}</span>
-        <div class="shelf-actions">
-          <button class="shelf-btn" onclick="cloneShelf('${shelfName.replace(/'/g,"\\'")}')" title="คัดลอกตู้นี้">⧉</button>
-          <button class="shelf-del" onclick="deleteShelf('${shelfName.replace(/'/g,"\\'")}')" title="ลบตู้">✕</button>
-        </div>
-      </div>
-      <div class="shelf-levels">${levelHtml}</div>
-      <div class="search-overlay" id="overlay-${shelfName.replace(/\s/g,'')}"></div>`;
-    
-    canvas.appendChild(div);
-  });
-
-  initDraggable();
-  initResizeObserver(); 
-  searchAndHighlight(); 
-}
-
-function initDraggable(){
-  const canvas=document.getElementById('roomCanvas');
-  const GRID=20;
-  let dragging=false,box=null,ox=0,oy=0;
-
-  canvas.onmousedown=e=>{
-    const handle=e.target.closest('.drag-handle');
-    if(handle&&!e.target.closest('.shelf-actions')){
-      dragging=true;
-      box=handle.closest('.shelf-box');
-      box.style.zIndex=1000;
-      ox=e.clientX-box.offsetLeft;
-      oy=e.clientY-box.offsetTop;
-      e.preventDefault();
-    }
-  };
-
-  canvas.onmousemove=e=>{
-    if(!dragging)return;
-    let x=e.clientX-ox;
-    let y=e.clientY-oy;
-    const maxX=canvas.offsetWidth-box.offsetWidth;
-    const maxY=canvas.offsetHeight-box.offsetHeight;
-    
-    x=Math.max(0,Math.min(x,maxX));
-    y=Math.max(0,Math.min(y,maxY));
-    x=Math.round(x/GRID)*GRID;
-    y=Math.round(y/GRID)*GRID;
-    
-    box.style.left=x+'px';
-    box.style.top=y+'px';
-  };
-
-  document.addEventListener('mouseup',()=>{
-    if(dragging){
-      box.style.zIndex='';
-      dragging=false;
-      saveLayout();
-      box=null;
-    }
-  },{once:false});
-}
-
-let resizeObserver;
-function initResizeObserver() {
-    if(resizeObserver) resizeObserver.disconnect();
-    resizeObserver = new ResizeObserver(entries => {
-        let changed = false;
-        for (let entry of entries) {
-            const box = entry.target;
-            const name = box.dataset.name;
-            if(roomLayout[name]) {
-                if(roomLayout[name].w !== box.offsetWidth || roomLayout[name].h !== box.offsetHeight) {
-                    roomLayout[name].w = box.offsetWidth;
-                    roomLayout[name].h = box.offsetHeight;
-                    changed = true;
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { corp: { blue: '#0f172a', lightBlue: '#1e293b', accent: '#3b82f6', gold: '#f59e0b' } },
+                    fontFamily: { sans: ['Sarabun', 'sans-serif'] }
                 }
             }
         }
-        if(changed) localStorage.setItem('wmsLayout3',JSON.stringify(roomLayout));
-    });
-    document.querySelectorAll('.shelf-box').forEach(box => resizeObserver.observe(box));
-}
+    </script>
+    <style>
+        body {
+            background-image: linear-gradient(rgba(15,23,42,0.95), rgba(15,23,42,0.95)),
+                url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=2070&q=80');
+            background-size: cover; background-attachment: fixed;
+            font-family: 'Sarabun', sans-serif;
+            -webkit-user-select: none; -moz-user-select: none; user-select: none;
+        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
 
-function saveLayout(){
-  const boxes=document.querySelectorAll('#roomCanvas .shelf-box');
-  boxes.forEach(b=>{
-      if(roomLayout[b.dataset.name]){
-        roomLayout[b.dataset.name].x = b.offsetLeft;
-        roomLayout[b.dataset.name].y = b.offsetTop;
-      }
-  });
-  localStorage.setItem('wmsLayout3',JSON.stringify(roomLayout));
-}
+        .status-waiting { animation: blink-yellow 2s infinite ease-in-out; font-weight: bold; color: #facc15; }
+        @keyframes blink-yellow {
+            0%, 100% { opacity: 1; color: #facc15; text-shadow: 0 0 5px rgba(250,204,21,0.3); }
+            50% { opacity: 0.6; color: #fde047; text-shadow: none; }
+        }
+        @keyframes blink-bg-yellow {
+            0%, 100% { background-color: rgba(15,23,42,0.4); box-shadow: inset 0 0 0 transparent; }
+            50% { background-color: rgba(234,179,8,0.15); box-shadow: inset 4px 0 0 #eab308; }
+        }
+        @keyframes blink-bg-red {
+            0%, 100% { background-color: rgba(15,23,42,0.4); box-shadow: inset 0 0 0 transparent; }
+            50% { background-color: rgba(239,68,68,0.2); box-shadow: inset 4px 0 0 #ef4444; }
+        }
+        .urgency-medium-blink { animation: blink-bg-yellow 2.5s infinite ease-in-out; }
+        .urgency-high-blink   { animation: blink-bg-red   2.5s infinite ease-in-out; }
 
-function searchAndHighlight(){
-  const kw=document.getElementById('searchMapInput').value.toLowerCase().trim();
-  
-  document.querySelectorAll('.shelf-box').forEach(b=>{
-      b.classList.remove('highlight-shelf');
-      b.querySelector('.search-overlay').innerHTML = '';
-  });
-  if(!kw) return;
+        .img-preview { max-height: 150px; border-radius: 8px; margin-top: 10px; display: none; border: 2px solid #475569; }
 
-  const shelfMatches = {};
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 60; display: none; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+        .animate-zoomIn { animation: zoomIn 0.2s ease-out; }
+        @keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-  globalInventory.forEach(item=>{
-    const id=getId(item).toLowerCase(), name=getName(item).toLowerCase(), loc=getLoc(item);
-    if(id.includes(kw) || name.includes(kw) || loc.toLowerCase().includes(kw)){
-      
-      let targetShelf = Object.keys(roomLayout).find(k => loc.toLowerCase().includes(k.toLowerCase()));
-      
-      if(targetShelf) {
-          if(!shelfMatches[targetShelf]) shelfMatches[targetShelf] = [];
-          shelfMatches[targetShelf].push({
-              fullLocation: loc,
-              qty: getQty(item)
-          });
-      }
+        .modal-content-img { max-width: 95%; max-height: 95%; position: relative; animation: zoomIn 0.3s ease; text-align: center; }
+        .modal-close-img { position: absolute; top: -40px; right: 0; color: white; font-size: 30px; cursor: pointer; font-weight: bold; text-shadow: 0 0 5px black; }
+
+        .fade-in { animation: fadeIn 0.18s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    </style>
+</head>
+<body class="text-slate-200 h-screen flex flex-col overflow-hidden">
+
+    <!-- Image Viewer -->
+    <div id="imageViewerModal" class="modal-overlay" onclick="closeImageViewer()" style="z-index:70;">
+        <div class="modal-content-img" onclick="event.stopPropagation()">
+            <span class="modal-close-img" onclick="closeImageViewer()">× ปิด</span>
+            <img id="imageViewerSrc" src="" class="rounded-lg shadow-2xl border-2 border-slate-700" style="max-height:85vh;max-width:100%;">
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-corp-blue border-b border-slate-700 shadow-lg z-20">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white rounded p-1 shadow-md h-12 w-12 flex items-center justify-center overflow-hidden"><span class="text-2xl">🛠️</span></div>
+                <div>
+                    <h1 class="text-xl font-bold text-white">MAINTENANCE SYSTEM</h1>
+                    <p class="text-xs text-corp-gold font-medium tracking-wider uppercase">Vschem1970 (Powered by Firebase)</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button onclick="refreshData()" class="p-2 rounded-full hover:bg-slate-700 transition text-slate-400 hover:text-white" title="Refresh">🔄</button>
+                <button id="btnLogin"  onclick="showLoginModal()" class="bg-corp-gold text-corp-blue font-bold py-2 px-4 rounded-md shadow-md flex items-center gap-2">🔐 Admin</button>
+                <button id="btnLogout" onclick="logout()"         class="hidden bg-red-600 text-white font-bold py-2 px-4 rounded-md shadow-md flex items-center gap-2">🚪 Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Nav -->
+    <nav class="bg-corp-lightBlue border-b border-slate-700 shadow-md z-10">
+        <div class="container mx-auto px-4">
+            <div class="flex space-x-1 overflow-x-auto">
+                <button onclick="switchTab('request')"    id="tab-request"    class="tab-btn px-6 py-3 text-sm font-medium border-b-2 border-transparent hover:text-corp-gold transition text-corp-gold border-corp-gold">📝 แจ้งซ่อม</button>
+                <button onclick="switchTab('status')"     id="tab-status"     class="tab-btn px-6 py-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-white transition">📊 ติดตามงาน</button>
+                <button onclick="switchTab('statistics')" id="tab-statistics" class="tab-btn hidden admin-only px-6 py-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-white transition">📊 สถิติ</button>
+                <button onclick="switchTab('dashboard')"  id="tab-dashboard"  class="tab-btn hidden admin-only px-6 py-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-white transition">📈 Admin</button>
+                <button onclick="switchTab('settings')"   id="tab-settings"   class="tab-btn hidden admin-only px-6 py-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-white transition">⚙️ ตั้งค่า</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-900/50 relative">
+
+        <!-- Request Form -->
+        <div id="view-request" class="view-section max-w-3xl mx-auto fade-in">
+            <div class="bg-corp-lightBlue rounded-xl shadow-2xl border border-slate-700 overflow-hidden">
+                <div class="bg-gradient-to-r from-corp-blue to-corp-lightBlue p-4 border-b border-slate-700">
+                    <h2 class="text-xl font-bold text-white">📝 แบบฟอร์มแจ้งซ่อม</h2>
+                </div>
+                <div class="p-6">
+                    <form id="requestForm" onsubmit="submitRequest(event)" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div><label class="block text-sm text-slate-400 mb-1">ชื่อผู้แจ้ง</label><input type="text" id="reqName" required class="w-full bg-slate-900 border border-slate-600 rounded px-4 py-2"></div>
+                            <div><label class="block text-sm text-slate-400 mb-1">สถานที่/แผนก</label><select id="reqDept" required class="w-full bg-slate-900 border border-slate-600 rounded px-4 py-2"><option value="">-- กำลังโหลด... --</option></select></div>
+                            <div><label class="block text-sm text-slate-400 mb-1">ข้อมูลติดต่อกลับ</label><input type="tel" id="reqPhone" required class="w-full bg-slate-900 border border-slate-600 rounded px-4 py-2"></div>
+                            <div class="bg-slate-800/50 p-2 rounded border border-yellow-500/30">
+                                <label class="block text-sm text-yellow-400 font-bold mb-1">🔑 รหัสยืนยัน (PIN)</label>
+                                <input type="tel" id="reqPin" required maxlength="6" class="w-full bg-slate-900 border border-yellow-500/50 rounded px-4 py-2 text-center tracking-widest text-lg font-bold text-yellow-400" placeholder="ตั้งรหัสยืนยันปิดงาน">
+                                <p class="text-[15px] text-slate-500 mt-1">* ใช้รหัสนี้เพื่อยืนยันจบงาน (ห้ามลืม)</p>
+                            </div>
+                            <div><label class="block text-sm text-slate-400 mb-1">รหัสอุปกรณ์</label><input type="text" id="reqEquipId" class="w-full bg-slate-900 border border-slate-600 rounded px-4 py-2" placeholder="ถ้ามี"></div>
+                            <div class="md:col-span-2"><label class="block text-sm text-slate-400 mb-1">ชื่ออุปกรณ์</label><input type="text" id="reqEquip" required class="w-full bg-slate-900 border border-slate-600 rounded px-4 py-2"></div>
+                        </div>
+                        <div class="border border-dashed border-slate-600 rounded-lg p-4 text-center hover:bg-slate-800 transition cursor-pointer relative" onclick="document.getElementById('reqImg').click()">
+                            <input type="file" id="reqImg" accept="image/*" class="hidden" onchange="previewImage(this,'reqPreview')">
+                            <span class="text-corp-gold font-bold">📷 แตะเพื่อแนบรูปภาพ (ก่อนซ่อม)</span>
+                            <p class="text-xs text-slate-500 mt-1">อัปโหลดไปยัง Firebase Storage ทันที</p>
+                            <img id="reqPreview" class="img-preview mx-auto">
+                        </div>
+                        <div><label class="block text-sm text-slate-400 mb-1">รายละเอียดปัญหา</label><textarea id="reqDetail" rows="4" required class="w-full bg-slate-900 border border-slate-600 rounded px-4 py-2"></textarea></div>
+                        <div>
+                            <label class="block text-sm text-slate-400 mb-3">ระดับความเร่งด่วน</label>
+                            <div class="flex gap-4">
+                                <label class="flex items-center gap-2 p-3 rounded border border-slate-600 w-full justify-center has-[:checked]:bg-green-500/10 has-[:checked]:border-green-500"><input type="radio" name="urgency" value="Low"    class="accent-green-500" checked><span class="text-green-400">ปกติ</span></label>
+                                <label class="flex items-center gap-2 p-3 rounded border border-slate-600 w-full justify-center has-[:checked]:bg-yellow-500/10 has-[:checked]:border-yellow-500"><input type="radio" name="urgency" value="Medium" class="accent-yellow-500"><span class="text-yellow-400">ด่วน</span></label>
+                                <label class="flex items-center gap-2 p-3 rounded border border-slate-600 w-full justify-center has-[:checked]:bg-red-500/10 has-[:checked]:border-red-500"><input type="radio" name="urgency" value="High"   class="accent-red-500"><span class="text-red-400">ด่วนมาก</span></label>
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-gradient-to-r from-corp-gold to-yellow-600 hover:from-yellow-500 text-corp-blue font-bold py-3 rounded shadow-lg">ส่งข้อมูล</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings -->
+        <div id="view-settings" class="view-section hidden max-w-5xl mx-auto fade-in">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-corp-lightBlue rounded-xl border border-slate-700 p-6 shadow-lg">
+                    <h3 class="text-lg font-bold text-corp-gold mb-4 border-b border-slate-700 pb-2">🔗 System Config (Firebase)</h3>
+                    <div class="mb-4 text-xs text-green-400">เชื่อมต่อผ่าน Firebase เรียบร้อย ไม่จำเป็นต้องใช้ลิงก์ GAS อีกต่อไป</div>
+                    <div class="border-t border-slate-700 pt-4 mt-4">
+                        <h4 class="text-sm font-bold text-white mb-3">🆔 ตั้งค่าหมายเลขงาน (Job ID)</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="block text-xs text-slate-400 mb-1">คำนำหน้า (Prefix)</label><input id="setting-id-prefix" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-xs text-slate-300" placeholder="เช่น MTN"></div>
+                            <div><label class="block text-xs text-slate-400 mb-1">เลขเริ่มต้น (Start Number)</label><input type="number" id="setting-id-start" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-xs text-slate-300" placeholder="เช่น 1"></div>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-2">รูปแบบตัวอย่าง: <span id="id-preview" class="text-corp-gold font-mono">MTN-2026-0001</span></p>
+                    </div>
+                    <div class="flex gap-2 mt-4">
+                        <button onclick="saveSystemSettings()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded text-sm font-bold">บันทึก & รีโหลด</button>
+                        <button onclick="resetConfig()"        class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm">Reset</button>
+                    </div>
+                </div>
+                <div class="bg-corp-lightBlue rounded-xl border border-slate-700 p-6 shadow-lg">
+                    <h3 class="text-lg font-bold text-corp-gold mb-4 border-b border-slate-700 pb-2">📋 List Management</h3>
+                    <div class="mb-4">
+                        <label class="text-xs text-slate-400 block mb-1">Departments</label>
+                        <div class="flex gap-2 mb-2"><input id="new-dept" class="flex-1 bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs" placeholder="เพิ่มแผนก..."><button onclick="modifyList('depts','add','new-dept')" class="bg-green-600 px-3 rounded text-xs font-bold">Add</button></div>
+                        <ul id="list-depts" class="h-24 overflow-y-auto bg-slate-900 border border-slate-700 p-1 text-xs text-slate-300 rounded"><li class="text-center pt-8 text-slate-500">กำลังโหลด...</li></ul>
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-400 block mb-1">Technicians</label>
+                        <div class="flex gap-2 mb-2"><input id="new-tech" class="flex-1 bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs" placeholder="เพิ่มช่าง..."><button onclick="modifyList('techs','add','new-tech')" class="bg-green-600 px-3 rounded text-xs font-bold">Add</button></div>
+                        <ul id="list-techs" class="h-24 overflow-y-auto bg-slate-900 border border-slate-700 p-1 text-xs text-slate-300 rounded"><li class="text-center pt-8 text-slate-500">กำลังโหลด...</li></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status -->
+        <div id="view-status" class="view-section hidden container mx-auto fade-in">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-white">📂 แฟ้มงานซ่อม</h2>
+                <input id="statusSearch" onkeyup="debouncedSearch(this.value)" placeholder="🔍 ค้นหา..." class="bg-slate-900 border border-slate-600 rounded-full px-4 py-2 text-sm w-64 focus:outline-none focus:border-corp-gold">
+            </div>
+            <div id="statusFolders" class="space-y-4 pb-10"></div>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="view-dashboard" class="view-section hidden container mx-auto fade-in">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-corp-lightBlue p-4 rounded-xl border border-slate-700 shadow-lg"><div class="text-slate-400 text-xs font-bold">TOTAL JOBS</div><div class="text-3xl font-bold text-white mt-1"    id="kpi-total">0</div></div>
+                <div class="bg-corp-lightBlue p-4 rounded-xl border-l-4 border-yellow-500 shadow-lg"><div class="text-slate-400 text-xs font-bold">WAITING</div><div class="text-3xl font-bold text-yellow-400 mt-1" id="kpi-waiting">0</div></div>
+                <div class="bg-corp-lightBlue p-4 rounded-xl border-l-4 border-blue-500 shadow-lg"><div class="text-slate-400 text-xs font-bold">PROCESSING</div><div class="text-3xl font-bold text-blue-400 mt-1"  id="kpi-processing">0</div></div>
+                <div class="bg-corp-lightBlue p-4 rounded-xl border-l-4 border-green-500 shadow-lg"><div class="text-slate-400 text-xs font-bold">DONE</div><div class="text-3xl font-bold text-green-400 mt-1"     id="kpi-done">0</div></div>
+            </div>
+            <div class="bg-corp-lightBlue rounded-xl shadow-2xl border border-slate-700 overflow-hidden">
+                <div class="p-4 border-b border-slate-700 bg-slate-800 flex flex-col md:flex-row justify-between items-center gap-3">
+                    <h2 class="text-xl font-bold text-corp-gold">📋 จัดการงานซ่อม</h2>
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <select id="adminStatusFilter" onchange="applyAdminFilters()" class="bg-slate-900 border border-slate-600 rounded-lg px-3 py-1 text-sm focus:outline-none focus:border-corp-gold text-slate-300">
+                            <option value="All">แสดงทั้งหมด</option>
+                            <option value="Active">🚧 ยังไม่ปิดจบงาน (Active)</option>
+                            <option value="Waiting">- รอรับงาน (Waiting)</option>
+                            <option value="Processing">- กำลังดำเนินการ (Processing)</option>
+                            <option value="Done">- รอตรวจสอบ/รอปิด (Done)</option>
+                            <option value="Closed">✅ ปิดงานแล้ว (Closed)</option>
+                        </select>
+                        <input id="adminSearchInput" onkeyup="debouncedAdminSearch()" placeholder="🔍 ค้นหางาน..." class="bg-slate-900 border border-slate-600 rounded-lg px-3 py-1 text-sm focus:outline-none focus:border-corp-gold w-full md:w-48">
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse" id="adminTable">
+                        <thead class="bg-slate-900 text-slate-400 uppercase text-xs"><tr><th class="p-4">Action</th><th class="p-4">ID</th><th class="p-4">User</th><th class="p-4">Equipment</th><th class="p-4">Status</th></tr></thead>
+                        <tbody id="adminTableBody" class="text-sm divide-y divide-slate-700"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div id="view-statistics" class="view-section hidden container mx-auto fade-in pb-10">
+            <div class="bg-corp-lightBlue p-4 rounded-xl border border-slate-700 shadow-lg mb-6 flex flex-wrap gap-4 items-center justify-between">
+                <h2 class="text-xl font-bold text-corp-gold">📊 สถิติงานซ่อมบำรุง</h2>
+                <div class="flex gap-2">
+                    <select id="statYear"  onchange="renderStatistics()" class="bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-corp-gold"></select>
+                    <select id="statMonth" onchange="renderStatistics()" class="bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-corp-gold">
+                        <option value="all">ตลอดทั้งปี (ทั้งหมด)</option>
+                        <option value="01">มกราคม</option><option value="02">กุมภาพันธ์</option><option value="03">มีนาคม</option>
+                        <option value="04">เมษายน</option><option value="05">พฤษภาคม</option><option value="06">มิถุนายน</option>
+                        <option value="07">กรกฎาคม</option><option value="08">สิงหาคม</option><option value="09">กันยายน</option>
+                        <option value="10">ตุลาคม</option><option value="11">พฤศจิกายน</option><option value="12">ธันวาคม</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-corp-lightBlue p-5 rounded-xl border border-slate-700 shadow-lg"><h3 class="text-center font-bold text-white mb-4">จำนวนงานซ่อมแยกตามแผนก (งาน)</h3><canvas id="chartCount"></canvas></div>
+                <div class="bg-corp-lightBlue p-5 rounded-xl border border-slate-700 shadow-lg"><h3 class="text-center font-bold text-white mb-4">ค่าใช้จ่ายรวมแยกตามแผนก (บาท)</h3><canvas id="chartCost"></canvas></div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Admin Edit Modal -->
+    <div id="adminModal" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-corp-lightBlue w-full max-w-2xl rounded-xl border border-slate-600 shadow-2xl p-6 m-4 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold text-corp-gold mb-4 flex justify-between items-center">
+                <span>🔧 Manage Job (แก้ไขงาน)</span>
+                <span id="modalJobDisplay" class="text-sm font-mono text-slate-400"></span>
+            </h3>
+            <input type="hidden" id="modalJobId">
+            <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 mb-4">
+                <div class="flex justify-between items-center mb-2 cursor-pointer" onclick="document.getElementById('editUserSection').classList.toggle('hidden')">
+                    <h4 class="text-sm font-bold text-blue-400">✏️ แก้ไขข้อมูลผู้แจ้ง / รูปก่อนซ่อม</h4>
+                    <span class="text-xs text-slate-500">▼ Show/Hide</span>
+                </div>
+                <div id="editUserSection" class="hidden space-y-3 mt-3 border-t border-slate-700 pt-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="text-xs text-slate-400">ผู้แจ้ง</label><input id="edit-reqName" class="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-sm text-slate-200"></div>
+                        <div><label class="text-xs text-slate-400">แผนก</label><input id="edit-reqDept"  class="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-sm text-slate-200"></div>
+                    </div>
+                    <div><label class="text-xs text-slate-400">ชื่ออุปกรณ์</label><textarea id="edit-equip"   class="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-sm text-slate-200"></textarea></div>
+                    <div><label class="text-xs text-slate-400">อาการเสีย</label><textarea  id="edit-problem" rows="2" class="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-sm text-slate-200"></textarea></div>
+                    <div class="border border-dashed border-slate-600 rounded p-2 bg-slate-800/30">
+                        <label class="text-xs text-yellow-500 font-bold mb-1 block">📷 รูปก่อนซ่อม (Before Image)</label>
+                        <input type="file" id="edit-img-before" accept="image/*" class="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-slate-700 file:text-white hover:file:bg-slate-600">
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div><label class="text-xs text-slate-400">Status</label><select id="modalStatus" onchange="toggleAdminFields()" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white"><option>Waiting</option><option>Processing</option><option>Done</option><option>Closed</option></select></div>
+                <div><label class="text-xs text-slate-400">Technician</label><select id="modalTech" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white"></select></div>
+            </div>
+            <div class="mb-4"><label class="text-xs text-slate-400">Admin Remarks (บันทึกช่าง)</label><textarea id="modalRemark" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white" rows="2"></textarea></div>
+            <div id="adminImageSection" class="hidden mb-4 border border-slate-600 rounded p-3 bg-slate-800/30">
+                <label class="text-xs text-green-400 font-bold mb-2 block">📷 Evidence (After Repair)</label>
+                <div class="flex items-center gap-3">
+                    <button onclick="document.getElementById('adminImg').click()" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded">Choose Image</button>
+                    <input type="file" id="adminImg" accept="image/*" class="hidden" onchange="previewImage(this,'adminPreview')">
+                    <div class="text-xs text-slate-500">Upload to Storage (After)</div>
+                </div>
+                <img id="adminPreview" class="img-preview mt-2 max-h-24 border-slate-600">
+            </div>
+            <div id="costSection" class="hidden border-t border-slate-600 pt-4 bg-slate-800/50 p-4 rounded-lg mb-4">
+                <h4 class="text-green-400 font-bold mb-2 flex justify-between"><span>💰 Cost</span><span id="grandTotal">0.00 ฿</span></h4>
+                <div id="itemsContainer" class="space-y-2 mb-2"></div>
+                <button onclick="addItemRow()" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded">+ Item</button>
+                <div class="mt-2"><label class="text-xs text-slate-400">Notes (รายละเอียดอะไหล่)</label><textarea id="modalNotes" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs text-white"></textarea></div>
+            </div>
+            <div id="dateUpdateSection" class="hidden border-t border-slate-600 pt-3 mb-4">
+                <label class="flex items-center gap-2 cursor-pointer bg-slate-800/50 p-3 rounded-lg border border-slate-600 hover:bg-slate-700 transition">
+                    <input type="checkbox" id="modalUpdateDate" value="true" class="w-5 h-5 accent-corp-gold">
+                    <span class="text-sm text-slate-300 font-medium">🕒 อัพเดทวันที่/เวลา ปิดจบงานเป็นปัจจุบัน <span class="text-slate-500 text-xs">(เว้นว่างไว้เพื่อใช้วันที่เดิม)</span></span>
+                </label>
+            </div>
+            <div class="flex justify-end gap-2 pt-4 border-t border-slate-700">
+                <button onclick="closeModal()"  class="px-4 py-2 rounded text-slate-300 hover:bg-slate-700">Cancel</button>
+                <button onclick="saveJob()"     class="bg-gradient-to-r from-corp-gold to-yellow-600 hover:from-yellow-500 text-corp-blue font-bold px-6 py-2 rounded shadow-lg">บันทึก (Save)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div id="detailModal" class="modal-overlay" onclick="closeDetailModal()">
+        <div class="bg-corp-lightBlue w-full max-w-md rounded-xl border border-slate-600 shadow-2xl overflow-hidden m-4 flex flex-col max-h-[90vh] animate-zoomIn" onclick="event.stopPropagation()">
+            <div class="bg-slate-800 p-4 border-b border-slate-600 flex justify-between items-center sticky top-0 z-10">
+                <div>
+                    <h3 class="text-lg font-bold text-corp-gold flex items-center gap-2">📄 รายละเอียดงาน</h3>
+                    <p id="d-jobId" class="text-xs text-slate-400 font-mono"></p>
+                </div>
+                <button onclick="closeDetailModal()" class="text-slate-400 hover:text-white text-2xl font-bold px-2">×</button>
+            </div>
+            <div class="p-5 overflow-y-auto space-y-4 text-sm">
+                <div class="flex justify-between items-center bg-slate-900/50 p-3 rounded-lg border border-slate-700">
+                    <div class="flex flex-col"><span class="text-xs text-slate-500">สถานะ (Status)</span><span id="d-status" class="font-bold text-lg"></span></div>
+                    <div class="text-right"><span class="text-xs text-slate-500 block">วันที่แจ้ง</span><span id="d-date" class="text-white font-medium"></span></div>
+                </div>
+                <div>
+                    <h4 class="text-corp-gold text-xs uppercase font-bold border-b border-slate-700 pb-1 mb-2">👤 ผู้แจ้งซ่อม</h4>
+                    <div class="grid grid-cols-2 gap-y-2">
+                        <div><span class="text-slate-500 text-xs block">ชื่อ</span><span id="d-req"   class="text-slate-200"></span></div>
+                        <div><span class="text-slate-500 text-xs block">แผนก</span><span id="d-dept" class="text-slate-200"></span></div>
+                        <div class="col-span-2"><span class="text-slate-500 text-xs block">ข้อมูลติดต่อกลับ</span><span id="d-phone" class="text-slate-200"></span></div>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-corp-gold text-xs uppercase font-bold border-b border-slate-700 pb-1 mb-2">⚙️ อุปกรณ์ & ปัญหา</h4>
+                    <div class="space-y-2">
+                        <div><span class="text-slate-500 text-xs block">ชื่ออุปกรณ์</span><span id="d-equip" class="text-white font-medium"></span></div>
+                        <div><span class="text-slate-500 text-xs block">รหัส</span><span id="d-equipId" class="text-slate-200"></span></div>
+                        <div class="bg-slate-800 p-3 rounded border border-slate-700 mt-2"><span class="text-slate-500 text-xs block mb-1">อาการเสีย</span><p id="d-prob" class="text-slate-200"></p></div>
+                    </div>
+                </div>
+                <div id="d-admin-sec" class="hidden">
+                    <h4 class="text-blue-400 text-xs uppercase font-bold border-b border-blue-900/50 pb-1 mb-2">🛠️ การดำเนินการ</h4>
+                    <div class="space-y-2">
+                        <div><span class="text-slate-500 text-xs block">ช่าง</span><span id="d-tech" class="text-slate-200"></span></div>
+                        <div class="bg-blue-900/20 p-3 rounded border border-blue-900/50"><span class="text-slate-500 text-xs block mb-1">หมายเหตุช่าง (Admin Remark)</span><p id="d-remark" class="text-blue-200 italic"></p></div>
+                        <div id="d-cost-box" class="flex justify-between items-center mt-2 border-t border-slate-700 pt-2"><span class="text-slate-400">ค่าใช้จ่าย:</span><span id="d-cost" class="text-green-400 font-bold text-lg"></span></div>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-corp-gold text-xs uppercase font-bold border-b border-slate-700 pb-1 mb-2">📷 รูปภาพ</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="text-center"><span class="text-[10px] text-slate-500 block mb-1">ก่อนซ่อม</span><div id="d-img-before" class="h-24 bg-slate-800 rounded flex items-center justify-center border border-slate-700 text-slate-600 text-xs">ไม่มีรูป</div></div>
+                        <div class="text-center"><span class="text-[10px] text-slate-500 block mb-1">หลังซ่อม</span><div id="d-img-after"  class="h-24 bg-slate-800 rounded flex items-center justify-center border border-slate-700 text-slate-600 text-xs">ยังไม่ดำเนินการ</div></div>
+                    </div>
+                </div>
+                <div id="d-verify-area" class="pt-2"></div>
+            </div>
+            <div class="p-4 bg-slate-800 border-t border-slate-600">
+                <button onclick="closeDetailModal()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded transition">ปิดหน้าต่าง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         JAVASCRIPT — FIREBASE INTEGRATION
+         ============================================================ -->
+    <script>
+    // ----------------------------------------------------------------
+    // 1. FIREBASE SETUP
+    // ----------------------------------------------------------------
+    const firebaseConfig = {
+      apiKey: "AIzaSyAQ6zJ7_s__e3iLpQE8bScUxUgVVGbYOAU",
+      authDomain: "maintenance-system-e6ed7.firebaseapp.com",
+      projectId: "maintenance-system-e6ed7",
+      storageBucket: "maintenance-system-e6ed7.firebasestorage.app",
+      messagingSenderId: "323374959927",
+      appId: "1:323374959927:web:3e4be4eac6f569c0d05eb2"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+
+    // ----------------------------------------------------------------
+    // 2. CONFIG & STATE
+    // ----------------------------------------------------------------
+    const DEFAULT_CFG = {
+        adminPass:    '888',
+        jobId:        { prefix: 'MTN', startNum: 1 }
+    };
+
+    const appData = {
+        reqs:    [],
+        lists:   { depts: [], techs: [] },
+        isAdmin: false,
+        cfg:     { ...DEFAULT_CFG }
+    };
+
+    const $ = id => document.getElementById(id);
+    const setText  = (id, val) => { const el = $(id); if (el) el.innerText = val ?? '-'; };
+    const setVal   = (id, val) => { const el = $(id); if (el) el.value   = val ?? ''; };
+
+    function debounce(fn, ms = 300) {
+        let t;
+        return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
     }
-  });
 
-  Object.keys(shelfMatches).forEach(shelfName => {
-      const box = document.querySelector(`.shelf-box[data-name="${shelfName}"]`);
-      if(box){
-          box.classList.add('highlight-shelf');
-          const overlay = box.querySelector('.search-overlay');
-          let html = `<div style="font-size:12px;margin-bottom:6px;font-weight:600;letter-spacing:1px">📍 เป้าหมายอยู่:</div>`;
-          
-          shelfMatches[shelfName].slice(0,2).forEach(m => {
-              html += `
-                  <div class="loc-badge">${m.fullLocation}</div>
-                  <div class="loc-qty">คงเหลือ: ${m.qty} ชิ้น</div>
-              `;
-          });
-          
-          if(shelfMatches[shelfName].length > 2) {
-              html += `<div class="loc-sub">และตำแหน่งอื่นอีก ${shelfMatches[shelfName].length - 2} จุด</div>`;
-          }
-          overlay.innerHTML = html;
-      }
-  });
-}
+    const debouncedSearch      = debounce(q => renderStatus(q));
+    const debouncedAdminSearch = debounce(() => applyAdminFilters());
 
-function handleGlobalSearch(){
-  const kw=document.getElementById('globalSearch').value;
-  if(!kw)return;
-  document.querySelectorAll('.nav-item').forEach(b=>{ if(b.textContent.includes('แผนผัง'))b.click(); });
-  document.getElementById('searchMapInput').value=kw;
-  searchAndHighlight();
-}
+    // ----------------------------------------------------------------
+    // 3. IMAGE UTILS
+    // ----------------------------------------------------------------
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            if (!file.type.startsWith('image/')) return reject('Not an image');
+            const reader = new FileReader();
+            reader.onerror = reject;
+            reader.onload = e => {
+                const img = new Image();
+                img.onerror = reject;
+                img.onload = () => {
+                    const MAX = 800;
+                    let { width: w, height: h } = img;
+                    if (w > h ? w > MAX : h > MAX) {
+                        if (w > h) { h = h * MAX / w; w = MAX; }
+                        else       { w = w * MAX / h; h = MAX; }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    resolve(canvas.toDataURL('image/jpeg', 0.6));
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
 
-function addNewShelf(){
-  const name=prompt('ตั้งชื่อตู้ / ชั้นวางใหม่ (เช่น ตู้ A-01):');
-  if(!name||!name.trim()) return;
-  if(roomLayout[name]){toast('ชื่อนี้มีอยู่แล้ว','err');return;}
+    function previewImage(input, previewId) {
+        const file = input.files[0];
+        const el   = $(previewId);
+        if (!file) { el.src = ''; el.style.display = 'none'; return; }
+        const reader = new FileReader();
+        reader.onload = e => { el.src = e.target.result; el.style.display = 'block'; };
+        reader.readAsDataURL(file);
+    }
 
-  let lvlsStr = prompt('ต้องการให้ตู้นี้มีกี่ชั้น? (ระบุ 1 ถึง 6):', '4');
-  let lvls = parseInt(lvlsStr);
-  if(isNaN(lvls) || lvls < 1) lvls = 1;
-  if(lvls > 6) lvls = 6;
+    function openImageViewer(url) {
+        if (!url) return;
+        $('imageViewerSrc').src = url;
+        $('imageViewerModal').style.display = 'flex';
+    }
+    function closeImageViewer() {
+        $('imageViewerModal').style.display = 'none';
+        $('imageViewerSrc').src = '';
+    }
 
-  roomLayout[name]={x:40, y:40, w:160, h:140, levels: lvls};
-  localStorage.setItem('wmsLayout3',JSON.stringify(roomLayout));
-  render2DMap();
-}
+    // ----------------------------------------------------------------
+    // 4. BOOTSTRAP
+    // ----------------------------------------------------------------
+    document.addEventListener('DOMContentLoaded', () => {
+        loadSettings();
+        Promise.all([refreshData(true), loadLists()]);
+    });
 
-// ⭐️ ฟังก์ชันการคัดลอกตู้
-function cloneShelf(originalName) {
-  const orig = roomLayout[originalName];
-  if(!orig) return;
+    // ----------------------------------------------------------------
+    // 5. LIST MANAGEMENT (Firebase)
+    // ----------------------------------------------------------------
+    async function loadLists(manual = false) {
+        try {
+            const doc = await db.collection('system').doc('config').get();
+            if (doc.exists && doc.data().lists) {
+                appData.lists = doc.data().lists;
+            } else {
+                await db.collection('system').doc('config').set({ lists: { depts: [], techs: [] } }, {merge: true});
+            }
+            renderLists();
+            renderDrops();
+        } catch (e) {
+            console.warn('loadLists failed', e);
+        }
+        if (manual) Swal.close();
+    }
 
-  const newName = prompt(`ตั้งชื่อตู้ใหม่ (คัดลอกขนาดมาจาก ${originalName}):`);
-  if(!newName || !newName.trim()) return;
-  if(roomLayout[newName]){toast('ชื่อนี้มีอยู่แล้ว','err');return;}
+    async function modifyList(type, act, id) {
+        const val = act === 'add' ? $(id).value.trim() : id;
+        if (!val) return;
+        Swal.showLoading();
+        try {
+            const ref = db.collection('system').doc('config');
+            if (act === 'add') {
+                await ref.update({ [`lists.${type}`]: firebase.firestore.FieldValue.arrayUnion(val) });
+                $(id).value = '';
+            } else {
+                await ref.update({ [`lists.${type}`]: firebase.firestore.FieldValue.arrayRemove(val) });
+            }
+            await loadLists();
+            Swal.close();
+        } catch (e) {
+            Swal.fire('Error', String(e), 'error');
+        }
+    }
 
-  // สร้างตู้ใหม่โดยใช้ขนาดและชั้นจากของเดิม แต่ขยับแกน x, y ลงมานิดหน่อยให้เห็นชัด
-  roomLayout[newName] = {
-      x: orig.x + 30,
-      y: orig.y + 30,
-      w: orig.w,
-      h: orig.h,
-      levels: orig.levels
-  };
-  localStorage.setItem('wmsLayout3',JSON.stringify(roomLayout));
-  render2DMap();
-  toast(`คัดลอกชั้น ${newName} เรียบร้อย`,'ok');
-}
+    // ----------------------------------------------------------------
+    // 6. SUBMIT REQUEST (Firebase)
+    // ----------------------------------------------------------------
+    async function submitRequest(e) {
+        e.preventDefault();
 
-function deleteShelf(name){
-  if(confirm(`ลบ "${name}" ออกจากห้อง?\n(ข้อมูลในสต๊อกจะไม่หาย แค่ตู้ในแผนผังหายไป)`)){
-    delete roomLayout[name];
-    localStorage.setItem('wmsLayout3',JSON.stringify(roomLayout));
-    render2DMap();
-  }
-}
+        const fileInput = $('reqImg');
+        if (!fileInput.files.length) {
+            return Swal.fire({
+                icon: 'warning', title: 'ข้อมูลไม่ครบถ้วน',
+                text: 'กรุณาแนบรูปภาพของอุปกรณ์',
+                background: '#1e293b', color: '#fff', confirmButtonColor: '#f59e0b'
+            });
+        }
 
-function resetLayout(){
-  if(confirm('ล้างพิกัดตู้ทั้งหมดกลับไปค่าเริ่มต้น?')){
-    localStorage.removeItem('wmsLayout3');
-    roomLayout={};
-    render2DMap();
-  }
-}
+        const urg = document.querySelector('input[name="urgency"]:checked').value;
+        if (urg === 'High') {
+            const { isConfirmed } = await Swal.fire({
+                title: 'ยืนยันระดับความเร่งด่วนสูงสุด',
+                text: 'ปัญหาดังกล่าวส่งผลกระทบโดยตรงต่อการทำงานหลักใช่หรือไม่?',
+                icon: 'warning', showCancelButton: true,
+                confirmButtonColor: '#ef4444', cancelButtonColor: '#475569',
+                confirmButtonText: 'ใช่, ขอยืนยัน', cancelButtonText: 'ยกเลิก',
+                background: '#1e293b', color: '#fff'
+            });
+            if (!isConfirmed) return;
+        }
 
-window.onload=loadData;
-</script>
+        const userPin = $('reqPin').value;
+        if (!userPin || userPin.length < 4) {
+            return Swal.fire('ข้อผิดพลาด', 'กรุณาตั้งรหัสยืนยันอย่างน้อย 4 หลัก', 'warning');
+        }
+
+        Swal.fire({ title: 'กำลังประมวลผล...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), background: '#1e293b', color: '#fff' });
+
+        try {
+            // Generate Job ID
+            const p = appData.cfg.jobId.prefix || 'MTN';
+            const s = appData.cfg.jobId.startNum || 1;
+            const year = new Date().getFullYear();
+            const pattern = `${p}-${year}-`;
+            let maxId = 0;
+            
+            appData.reqs.forEach(r => {
+                if (r.jobID && r.jobID.startsWith(pattern)) {
+                    const n = parseInt(r.jobID.replace(pattern, ''), 10);
+                    if (!isNaN(n) && n > maxId) maxId = n;
+                }
+            });
+            
+            const newId = pattern + String(maxId === 0 ? s : maxId + 1).padStart(4, '0');
+
+            // Image Upload
+            let imgUrl = "";
+            let imgData = await fileToBase64(fileInput.files[0]);
+            const imgRef = storage.ref(`jobs/${newId}_BEFORE.jpg`);
+            await imgRef.putString(imgData, 'data_url');
+            imgUrl = await imgRef.getDownloadURL();
+
+            const payload = {
+                jobID: newId,
+                requestDate: new Date().toISOString(),
+                requesterName: $('reqName').value,
+                positionDept: $('reqDept').value,
+                phoneNumber: $('reqPhone').value,
+                equipId: $('reqEquipId').value,
+                equipmentLocation: $('reqEquip').value,
+                problemDetails: $('reqDetail').value,
+                urgency: urg, 
+                status: 'Waiting',
+                imageBefore: imgUrl,
+                userPin: userPin,
+                technician: '', adminRemarks: '', additionalNotes: '', cost: 0, itemsData: '[]'
+            };
+
+            await db.collection('requests').doc(newId).set(payload);
+
+            $('requestForm').reset();
+            $('reqPreview').style.display = 'none';
+
+            let html = `<div class="text-left mt-2">
+                <p class="text-sm text-green-400 mb-2">ข้อมูลของท่านได้รับการจัดส่งเข้าสู่ระบบเรียบร้อยแล้ว</p>
+                <p class="mb-1">หมายเลขงาน (Job ID): <b class="text-corp-gold font-mono">${newId}</b></p>
+                <p class="mb-3">รหัสยืนยันปิดงาน (PIN): <b class="text-yellow-400 font-mono tracking-widest">${userPin}</b></p>
+                <div class="bg-slate-800 p-3 rounded border border-slate-600">
+                    <p class="text-xs text-slate-300 leading-relaxed"><b>⚠️ ข้อกำหนดสำคัญ:</b><br>
+                    ใช้รหัส PIN เพื่อกดยืนยันการจบงานในเมนู <b class="text-corp-gold">"ติดตามงาน"</b></p>
+                </div></div>`;
+
+            let title = 'จัดส่งข้อมูลสำเร็จ', icon = 'success';
+            if (urg === 'Medium') {
+                title = '⚠️ จัดส่งข้อมูลสำเร็จ (ระดับด่วน)'; icon = 'warning';
+                html += `<div class="mt-4 text-sm bg-yellow-900/30 p-2 rounded border border-yellow-700">ติดต่อประสานงาน: <b class="text-yellow-400">098-279-9918</b></div>`;
+            }
+            if (urg === 'High') {
+                title = '🚨 จัดส่งข้อมูลสำเร็จ (ด่วนมาก)'; icon = 'warning';
+                html += `<div class="mt-4 text-sm bg-red-900/30 p-2 rounded border border-red-700 text-red-300">ติดต่อเจ้าหน้าที่ทันที: <b class="text-white">098-279-9918</b></div>`;
+            }
+
+            await Swal.fire({ icon, title, html, background: '#1e293b', color: '#fff', confirmButtonColor: '#f59e0b' });
+            refreshData(true);
+            switchTab('status');
+        } catch (err) {
+            Swal.fire('ข้อผิดพลาด', String(err), 'error');
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // 7. VERIFY / CLOSE JOB (User side - Firebase)
+    // ----------------------------------------------------------------
+    async function verifyUserJob(jobId, correctPin) {
+        const { value: enteredPin } = await Swal.fire({
+            title: 'ยืนยันการจบงาน', text: 'กรุณาใส่รหัส PIN ที่คุณตั้งไว้ตอนแจ้งซ่อม',
+            input: 'password', inputPlaceholder: 'Enter PIN',
+            background: '#1e293b', color: '#fff', confirmButtonColor: '#22c55e', showCancelButton: true
+        });
+        if (!enteredPin) return;
+        if (String(enteredPin) !== String(correctPin)) return Swal.fire('รหัสไม่ถูกต้อง', 'กรุณาลองใหม่อีกครั้ง', 'error');
+
+        Swal.fire({ title: 'Verifying...', didOpen: () => Swal.showLoading() });
+        try {
+            await db.collection('requests').doc(jobId).update({
+                status: 'Closed',
+                completedDate: new Date().toISOString()
+            });
+            refreshData(true);
+            Swal.fire('สำเร็จ', 'ยืนยันจบงานเรียบร้อยแล้ว', 'success');
+        } catch (err) { Swal.fire('Error', String(err), 'error'); }
+    }
+
+    // ----------------------------------------------------------------
+    // 8. FETCH DATA (Firebase)
+    // ----------------------------------------------------------------
+    async function refreshData(silent = false) {
+        if (!silent) Swal.showLoading();
+        try {
+            const snapshot = await db.collection('requests').orderBy('requestDate', 'desc').get();
+            appData.reqs = snapshot.docs.map(doc => doc.data());
+            renderStatus();
+            if (appData.isAdmin) renderAdmin();
+            updateDashboard();
+        } catch (e) { console.warn('refreshData failed', e); }
+        if (!silent) Swal.close();
+    }
+
+    // ----------------------------------------------------------------
+    // 9. ADMIN FUNCTIONS (Firebase)
+    // ----------------------------------------------------------------
+    function openModal(id) {
+        const r = appData.reqs.find(x => x.jobID === id);
+        if (!r) return Swal.fire('Error', 'ไม่พบข้อมูลงาน', 'error');
+
+        $('modalJobId').value      = id;
+        $('modalJobDisplay').innerText = id;
+
+        setVal('edit-reqName',  r.requesterName);
+        setVal('edit-reqDept',  r.positionDept);
+        setVal('edit-equip',    r.equipmentLocation);
+        setVal('edit-problem',  r.problemDetails);
+        $('edit-img-before').value = '';
+
+        setVal('modalStatus', r.status);
+        setVal('modalTech',   r.technician);
+        setVal('modalRemark', r.adminRemarks);
+        setVal('modalNotes',  r.additionalNotes);
+
+        $('adminImg').value = '';
+        $('adminPreview').style.display = 'none';
+
+        const container = $('itemsContainer');
+        container.innerHTML = '';
+        try {
+            const items = JSON.parse(r.itemsData);
+            if (items?.length) items.forEach(i => addItemRow(i.name, i.quantity, i.unitPrice));
+            else addItemRow();
+        } catch { addItemRow(); }
+
+        const isDoneOrClosed = r.status === 'Done' || r.status === 'Closed';
+        $('dateUpdateSection').classList.toggle('hidden', !isDoneOrClosed);
+        if (isDoneOrClosed) $('modalUpdateDate').checked = false;
+
+        toggleAdminFields();
+        $('adminModal').classList.remove('hidden');
+    }
+
+    async function saveJob() {
+        const jobId = $('modalJobId').value;
+        const st = $('modalStatus').value;
+        let items = [], cost = 0;
+
+        if (st === 'Done' || st === 'Closed') {
+            document.querySelectorAll('.item-row').forEach(row => {
+                const n = row.querySelector('.i-n').value;
+                const q = +row.querySelector('.i-q').value;
+                const p = +row.querySelector('.i-p').value;
+                if (n) { const t = q * p; items.push({ name: n, quantity: q, unitPrice: p, total: t }); cost += t; }
+            });
+        }
+
+        Swal.fire({ title: 'Saving...', text: 'Updating job info...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        
+        try {
+            const updateData = {
+                requesterName: $('edit-reqName').value,
+                positionDept: $('edit-reqDept').value,
+                equipmentLocation: $('edit-equip').value,
+                problemDetails: $('edit-problem').value,
+                status: st,
+                technician: $('modalTech').value,
+                adminRemarks: $('modalRemark').value,
+                additionalNotes: $('modalNotes').value
+            };
+
+            // Before Image Update
+            if ($('edit-img-before').files.length > 0) {
+                const b64Before = await fileToBase64($('edit-img-before').files[0]);
+                const refBefore = storage.ref(`jobs/${jobId}_BEFORE_UPDATED.jpg`);
+                await refBefore.putString(b64Before, 'data_url');
+                updateData.imageBefore = await refBefore.getDownloadURL();
+            }
+
+            if (st === 'Done' || st === 'Closed') {
+                updateData.cost = cost;
+                updateData.itemsData = JSON.stringify(items);
+                if ($('modalUpdateDate')?.checked) updateData.completedDate = new Date().toISOString();
+
+                // After Image Upload
+                if ($('adminImg').files.length > 0) {
+                    const b64After = await fileToBase64($('adminImg').files[0]);
+                    const refAfter = storage.ref(`jobs/${jobId}_AFTER.jpg`);
+                    await refAfter.putString(b64After, 'data_url');
+                    updateData.imageAfter = await refAfter.getDownloadURL();
+                }
+            } else if (st === 'Processing') {
+                const r = appData.reqs.find(x => x.jobID === jobId);
+                if (!r.acceptedDate) updateData.acceptedDate = new Date().toISOString();
+            }
+
+            await db.collection('requests').doc(jobId).update(updateData);
+            closeModal();
+            refreshData(true);
+            Swal.fire('Saved', 'บันทึกข้อมูลเรียบร้อยแล้ว', 'success');
+        } catch (e) { Swal.fire('Error', String(e), 'error'); }
+    }
+
+    // ----------------------------------------------------------------
+    // 10. RENDERERS
+    // ----------------------------------------------------------------
+    function renderLists() {
+        ['depts', 'techs'].forEach(k => {
+            const list = appData.lists[k] || [];
+            const el   = $('list-' + k);
+            el.innerHTML = list.length
+                ? list.map(x => `<li class="flex justify-between border-b border-slate-700 p-1"><span>${x}</span><button onclick="modifyList('${k}','del','${x}')" class="text-red-400 font-bold px-2">×</button></li>`).join('')
+                : `<li class="text-center pt-8 text-slate-500">Empty</li>`;
+        });
+    }
+
+    function renderDrops() {
+        const opts = list => '<option value="">-- Select --</option>' + (list || []).map(x => `<option value="${x}">${x}</option>`).join('');
+        $('reqDept').innerHTML  = opts(appData.lists.depts);
+        $('modalTech').innerHTML = opts(appData.lists.techs);
+    }
+
+    const STATUS_BADGE = {
+        Waiting:    `<span class="inline-block px-2 py-1 rounded text-xs font-bold bg-yellow-900/30 text-yellow-400 border border-yellow-500/50 status-waiting">Waiting</span>`,
+        Processing: `<span class="inline-block px-2 py-1 rounded text-xs font-bold bg-blue-900/30 text-blue-400 border border-blue-500/50">Processing</span>`,
+        Done:       `<span class="inline-block px-2 py-1 rounded text-xs font-bold bg-green-900/30 text-green-400 border border-green-500/50 animate-pulse">Wait Verify</span>`,
+        Closed:     `<span class="inline-block px-2 py-1 rounded text-xs font-bold bg-green-500 text-slate-900">✅ Closed</span>`,
+        _default:   `<span class="inline-block px-2 py-1 rounded text-xs font-bold bg-slate-700 text-slate-400 border border-slate-600">`
+    };
+
+    function getBadge(status) { return STATUS_BADGE[status] || (STATUS_BADGE._default + status + '</span>'); }
+
+    function getUrgClass(r) {
+        if (r.status === 'Done' || r.status === 'Closed') return 'bg-green-900/20 border-b border-green-800/50';
+        if (r.urgency === 'High')   return 'urgency-high-blink border-b border-slate-700';
+        if (r.urgency === 'Medium') return 'urgency-medium-blink border-b border-slate-700';
+        return 'bg-slate-900/40 border-b border-slate-800';
+    }
+
+    const thLocale = { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' };
+
+    function renderStatus(q = '') {
+        const container = $('statusFolders');
+        const q_lc = q.toLowerCase();
+        const filtered = q_lc
+            ? appData.reqs.filter(r => (r.jobID + r.requesterName + r.equipmentLocation).toLowerCase().includes(q_lc))
+            : appData.reqs;
+
+        if (!filtered.length) {
+            container.innerHTML = '<div class="text-center text-slate-500 py-10">ไม่พบข้อมูล (No Data)</div>';
+            return;
+        }
+
+        const groups = new Map();
+        filtered.forEach(r => {
+            const key = (r.requestDate || '').substring(0, 7);
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(r);
+        });
+
+        const sorted = [...groups.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+
+        const html = sorted.map(([month, rows], idx) => {
+            const rowsHtml = rows.map(r => {
+                const hasRemark  = r.adminRemarks?.trim();
+                const detail     = hasRemark ? `💬 Note: ${r.adminRemarks}` : r.problemDetails;
+                const remarkCls  = hasRemark ? 'text-corp-gold italic border-corp-gold' : 'text-slate-400 border-slate-700';
+                let dateStr = '-';
+                try { dateStr = new Date(r.requestDate).toLocaleString('th-TH', thLocale); } catch (_) {}
+                return `<div onclick="openDetailModal('${r.jobID}')" class="p-4 hover:bg-slate-800/80 cursor-pointer transition active:bg-slate-700 group ${getUrgClass(r)}">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-corp-gold font-mono text-xs tracking-wider opacity-80">${r.jobID}</span>
+                        ${getBadge(r.status)}
+                    </div>
+                    <div class="mb-2"><span class="text-white font-bold text-sm block leading-relaxed break-words">${r.equipmentLocation}</span></div>
+                    <div class="text-xs ${remarkCls} break-words leading-relaxed border-l-2 pl-2 mb-3">${detail}</div>
+                    <div class="flex items-center gap-4 text-[11px] text-slate-500 border-t border-slate-800 pt-2 mt-2">
+                        <div class="flex items-center gap-1 overflow-hidden whitespace-nowrap text-ellipsis max-w-[50%]">
+                            <span class="opacity-70">👤</span><span class="text-slate-300 font-medium truncate">${r.requesterName}</span>
+                        </div>
+                        <div class="flex items-center gap-1 whitespace-nowrap"><span class="opacity-70">🕒</span><span class="text-slate-400">${dateStr}</span></div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            const open = q || idx === 0 ? '' : 'hidden';
+            return `<div class="bg-slate-800 rounded-xl mb-4 border border-slate-700 overflow-hidden shadow-lg">
+                <div onclick="this.nextElementSibling.classList.toggle('hidden')" class="p-3 font-bold cursor-pointer hover:bg-slate-700 flex justify-between items-center bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700">
+                    <span class="flex items-center gap-2 text-white">📁 ${month}</span>
+                    <span class="text-xs bg-slate-600 px-2 py-1 rounded-full text-white">${rows.length} งาน</span>
+                </div>
+                <div class="${open} bg-transparent">${rowsHtml}</div>
+            </div>`;
+        }).join('');
+
+        container.innerHTML = html;
+    }
+
+    function renderAdmin() {
+        const tbody = $('adminTableBody');
+        const rows  = appData.reqs.map(r => {
+            let sCls = 'text-slate-400';
+            if (r.status === 'Done')    sCls = 'text-green-400 font-bold';
+            if (r.status === 'Closed')  sCls = 'text-green-500 font-bold underline';
+            if (r.status === 'Waiting') sCls = 'status-waiting';
+            if (r.status === 'Processing') sCls = 'text-blue-400 font-bold';
+
+            let trCls = 'border-b border-slate-700 hover:bg-slate-800';
+            if (r.status === 'Done' || r.status === 'Closed') trCls = 'border-b border-green-900 bg-green-900/10 hover:bg-green-900/20';
+            else if (r.urgency === 'High')   trCls += ' urgency-high-blink';
+            else if (r.urgency === 'Medium') trCls += ' urgency-medium-blink';
+
+            return `<tr class="${trCls}" data-status="${r.status}">
+                <td class="p-3"><button onclick="openModal('${r.jobID}')" class="bg-blue-600 px-2 py-1 rounded text-xs hover:bg-blue-500 transition">Edit</button></td>
+                <td class="p-3 font-mono text-xs">${r.jobID}</td>
+                <td class="p-3 text-sm">${r.requesterName}</td>
+                <td class="p-3 text-sm">${r.equipmentLocation}</td>
+                <td class="p-3 text-xs ${sCls}">${r.status}</td>
+            </tr>`;
+        });
+        tbody.innerHTML = rows.join('');
+        applyAdminFilters();
+    }
+
+    function updateDashboard() {
+        const reqs = appData.reqs;
+        $('kpi-total').innerText      = reqs.length;
+        $('kpi-waiting').innerText    = reqs.filter(x => x.status === 'Waiting').length;
+        $('kpi-processing').innerText = reqs.filter(x => x.status === 'Processing').length;
+        $('kpi-done').innerText       = reqs.filter(x => x.status === 'Done' || x.status === 'Closed').length;
+    }
+
+    function applyAdminFilters() {
+        const sf  = $('adminStatusFilter').value;
+        const tf  = $('adminSearchInput').value.toLowerCase();
+        document.querySelectorAll('#adminTableBody tr').forEach(row => {
+            const s = row.dataset.status;
+            const statusOk = sf === 'All' ? true : sf === 'Active' ? s !== 'Closed' : s === sf;
+            const textOk = !tf || row.innerText.toLowerCase().includes(tf);
+            row.style.display = statusOk && textOk ? '' : 'none';
+        });
+    }
+
+    function openDetailModal(jobId) {
+        const r = appData.reqs.find(x => x.jobID === jobId);
+        if (!r) return;
+
+        setText('d-jobId',  r.jobID);
+        setText('d-date',   new Date(r.requestDate).toLocaleString('th-TH'));
+        setText('d-req',    r.requesterName);
+        setText('d-dept',   r.positionDept);
+        setText('d-phone',  r.phoneNumber);
+        setText('d-equip',  r.equipmentLocation);
+        setText('d-equipId',r.equipId);
+        setText('d-prob',   r.problemDetails);
+
+        const sEl = $('d-status');
+        sEl.className = 'font-bold text-lg ';
+        sEl.innerText = r.status;
+        if (r.status === 'Waiting')    sEl.classList.add('text-yellow-400', 'status-waiting');
+        if (r.status === 'Processing') sEl.classList.add('text-blue-400');
+        if (r.status === 'Done')       sEl.classList.add('text-green-400');
+        if (r.status === 'Closed')     { sEl.classList.add('text-green-500'); sEl.innerText = '✅ Closed (Completed)'; }
+
+        const admSec = $('d-admin-sec');
+        if (r.status !== 'Waiting') {
+            admSec.classList.remove('hidden');
+            setText('d-tech',   r.technician);
+            setText('d-remark', r.adminRemarks || 'กำลังดำเนินการ...');
+            const costBox = $('d-cost-box');
+            if (r.cost && +r.cost > 0) {
+                costBox.classList.remove('hidden');
+                setText('d-cost', (+r.cost).toLocaleString() + ' ฿');
+            } else { costBox.classList.add('hidden'); }
+        } else { admSec.classList.add('hidden'); }
+
+        const setImg = (id, url, placeholder) => {
+            const div = $(id);
+            div.innerHTML = url
+                ? `<img src="${url}" class="h-full w-full object-cover rounded cursor-pointer hover:scale-105 transition" onclick="openImageViewer('${url}')">`
+                : `<span class="text-slate-600 text-xs">${placeholder}</span>`;
+        };
+        setImg('d-img-before', r.imageBefore, 'ไม่มีรูป');
+        setImg('d-img-after',  r.imageAfter,  'ไม่มีรูป');
+
+        const vDiv = $('d-verify-area');
+        vDiv.innerHTML = r.status === 'Done'
+            ? `<button onclick="closeDetailModal();verifyUserJob('${r.jobID}','${r.userPin||''}')" class="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 text-white font-bold py-3 rounded shadow-lg border border-green-400 mt-2 animate-pulse">🔒 ยืนยันจบงาน (Verify & Close)</button>`
+            : '';
+
+        $('detailModal').style.display = 'flex';
+    }
+    function closeDetailModal() { $('detailModal').style.display = 'none'; }
+
+    // ----------------------------------------------------------------
+    // 11. SYSTEM SETTINGS
+    // ----------------------------------------------------------------
+    function loadSettings() {
+        const saved = JSON.parse(localStorage.getItem('maint_cfg_fb') || '{}');
+        appData.cfg = { ...DEFAULT_CFG, ...saved };
+        if (!appData.cfg.jobId) appData.cfg.jobId = { ...DEFAULT_CFG.jobId };
+
+        setVal('setting-id-prefix',  appData.cfg.jobId.prefix || 'MTN');
+        setVal('setting-id-start',   appData.cfg.jobId.startNum || 1);
+
+        updateIdPreview();
+        $('setting-id-prefix').addEventListener('input', updateIdPreview);
+        $('setting-id-start').addEventListener('input',  updateIdPreview);
+    }
+
+    function updateIdPreview() {
+        const p      = $('setting-id-prefix').value || 'XXX';
+        const s      = $('setting-id-start').value  || '1';
+        const padded = s.toString().padStart(4, '0');
+        $('id-preview').innerText = `${p}-${new Date().getFullYear()}-${padded}`;
+    }
+
+    function saveSystemSettings() {
+        appData.cfg.jobId = {
+            prefix:   $('setting-id-prefix').value.trim() || 'MTN',
+            startNum: parseInt($('setting-id-start').value.trim()) || 1
+        };
+        localStorage.setItem('maint_cfg_fb', JSON.stringify(appData.cfg));
+        location.reload();
+    }
+
+    function resetConfig() { localStorage.removeItem('maint_cfg_fb'); location.reload(); }
+
+    // ----------------------------------------------------------------
+    // 12. AUTH & MODAL HELPERS
+    // ----------------------------------------------------------------
+    function showLoginModal() {
+        Swal.fire({ title: 'Admin', input: 'password', background: '#1e293b', color: '#fff' }).then(({ value }) => {
+            if (value === appData.cfg.adminPass) {
+                appData.isAdmin = true;
+                document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
+                $('btnLogin').classList.add('hidden');
+                $('btnLogout').classList.remove('hidden');
+                switchTab('settings');
+            } else if (value) {
+                Swal.fire('Error', 'รหัสผิด', 'error');
+            }
+        });
+    }
+
+    function logout() { location.reload(); }
+
+    function switchTab(id) {
+        document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(el => {
+            el.classList.remove('text-corp-gold', 'border-corp-gold');
+            el.classList.add('text-slate-400');
+            el.style.borderBottomColor = '';
+        });
+        $('view-' + id).classList.remove('hidden');
+        const btn = $('tab-' + id);
+        btn.classList.remove('text-slate-400');
+        btn.classList.add('text-corp-gold', 'border-corp-gold');
+        if (id === 'dashboard')  { refreshData(true); }
+        if (id === 'statistics') { renderStatistics(); }
+    }
+
+    function closeModal() { $('adminModal').classList.add('hidden'); }
+
+    function toggleAdminFields() {
+        const st = $('modalStatus').value;
+        const isDone = st === 'Done' || st === 'Closed';
+        $('costSection').style.display        = isDone ? 'block' : 'none';
+        $('adminImageSection').style.display  = (isDone || st === 'Processing') ? 'block' : 'none';
+    }
+
+    function addItemRow(n = '', q = 1, p = 0) {
+        const div = document.createElement('div');
+        div.className = 'grid grid-cols-6 gap-2 item-row';
+        div.innerHTML = `<input class="col-span-3 bg-slate-900 border border-slate-600 rounded px-1 i-n" value="${n}">
+            <input type="number" class="col-span-1 bg-slate-900 border border-slate-600 rounded px-1 i-q" value="${q}" oninput="calcTotal()">
+            <input type="number" class="col-span-1 bg-slate-900 border border-slate-600 rounded px-1 i-p" value="${p}" oninput="calcTotal()">
+            <button onclick="this.parentElement.remove();calcTotal()" class="text-red-400">×</button>`;
+        $('itemsContainer').appendChild(div);
+        calcTotal();
+    }
+
+    function calcTotal() {
+        let total = 0;
+        document.querySelectorAll('.item-row').forEach(row => {
+            total += +row.querySelector('.i-q').value * +row.querySelector('.i-p').value;
+        });
+        $('grandTotal').innerText = total.toFixed(2) + ' ฿';
+    }
+
+    // ----------------------------------------------------------------
+    // 13. STATISTICS
+    // ----------------------------------------------------------------
+    let chartCountInstance = null;
+    let chartCostInstance  = null;
+
+    function initStatFilters() {
+        const years = new Set(appData.reqs
+            .map(r => r.requestDate ? new Date(r.requestDate).getFullYear() : null)
+            .filter(Boolean));
+        if (!years.size) years.add(new Date().getFullYear());
+
+        const cur = new Date().getFullYear();
+        const sel = $('statYear');
+        sel.innerHTML = '<option value="all">รวมทุกปี</option>' +
+            [...years].sort().reverse().map(y => `<option value="${y}"${y === cur ? ' selected' : ''}>ปี ${y}</option>`).join('');
+    }
+
+    const CHART_OPTS = {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+            x: { ticks: { color: '#e2e8f0', font: { family: 'Sarabun' } }, grid: { display: false } }
+        }
+    };
+
+    function renderStatistics() {
+        if ($('statYear').options.length <= 1) initStatFilters();
+        const yf = $('statYear').value;
+        const mf = $('statMonth').value;
+        const deptStats = Object.create(null);
+
+        appData.reqs.forEach(r => {
+            if (!r.requestDate) return;
+            const d = new Date(r.requestDate);
+            const y = d.getFullYear().toString();
+            const m = (d.getMonth() + 1).toString().padStart(2, '0');
+            if (yf !== 'all' && y !== yf) return;
+            if (mf !== 'all' && m !== mf) return;
+
+            const dept = r.positionDept || 'ไม่ระบุแผนก';
+            if (!deptStats[dept]) deptStats[dept] = { count: 0, cost: 0 };
+            deptStats[dept].count++;
+            deptStats[dept].cost += parseFloat(r.cost) || 0;
+        });
+
+        const byCount = Object.keys(deptStats).sort((a, b) => deptStats[b].count - deptStats[a].count);
+        const byCost  = Object.keys(deptStats).sort((a, b) => deptStats[b].cost  - deptStats[a].cost);
+
+        chartCountInstance?.destroy();
+        chartCostInstance?.destroy();
+
+        chartCountInstance = new Chart($('chartCount').getContext('2d'), {
+            type: 'bar',
+            data: { labels: byCount, datasets: [{ label: 'จำนวนงาน (งาน)', data: byCount.map(l => deptStats[l].count), backgroundColor: 'rgba(59,130,246,0.8)', borderColor: 'rgb(37,99,235)', borderWidth: 1, borderRadius: 4 }] },
+            options: CHART_OPTS
+        });
+
+        chartCostInstance = new Chart($('chartCost').getContext('2d'), {
+            type: 'bar',
+            data: { labels: byCost, datasets: [{ label: 'ค่าใช้จ่าย (บาท)', data: byCost.map(l => deptStats[l].cost), backgroundColor: 'rgba(245,158,11,0.8)', borderColor: 'rgb(217,119,6)', borderWidth: 1, borderRadius: 4 }] },
+            options: CHART_OPTS
+        });
+    }
+    </script>
 </body>
 </html>
