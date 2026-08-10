@@ -432,34 +432,41 @@
     // 2.5 EXPORT REPORT TO EXCEL (WITH IMAGES) & BATCH EXPORT
     // ----------------------------------------------------------------
 
-    // ฟังก์ชันช่วยดึงรูปภาพมาทำเป็น Base64 ด้วย Proxy เพื่อแก้ปัญหา CORS (ฝังลง Excel จริงๆ)
+    // ฟังก์ชันดึงรูปภาพและแปลงให้เป็น Base64 แบบสมบูรณ์ (ตัด Header ทิ้งให้ Excel อ่านออก)
     async function getBase64Image(url) {
         if (!url || url.includes('drive.google')) return null; // ข้ามรูปเก่าที่มาจากไดรฟ์
+        
         try {
-            // โหลดผ่าน Proxy ยอดนิยมเพื่อไม่ให้ติดบล็อก
-            const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
-            const res = await fetch(proxyUrl);
+            let res;
+            try {
+                // ลองดึงตรงๆ ก่อน
+                res = await fetch(url);
+                if(!res.ok) throw new Error("Fetch failed");
+            } catch(e) {
+                // ถ้าติดบล็อก ใช้ Proxy ยอดนิยมเพื่อรับรูปภาพแทน
+                const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
+                res = await fetch(proxyUrl);
+            }
+            
             const blob = await res.blob();
+            if (!blob.type.includes('image')) return null;
+
             return new Promise((resolve) => {
                 const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result);
+                reader.onloadend = () => {
+                    const result = reader.result;
+                    // ตัด 'data:image/jpeg;base64,' ทิ้ง เพราะ ExcelJS ต้องการแค่รหัสเพียวๆ
+                    if (result && result.includes(',')) {
+                        resolve(result.split(',')[1]); 
+                    } else {
+                        resolve(null);
+                    }
+                };
                 reader.readAsDataURL(blob);
             });
         } catch (e) {
-            try {
-                // Proxy สำรอง 2
-                const proxyUrl2 = "https://corsproxy.io/?" + encodeURIComponent(url);
-                const res = await fetch(proxyUrl2);
-                const blob = await res.blob();
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result);
-                    reader.readAsDataURL(blob);
-                });
-            } catch (err) {
-                console.warn("ดึงรูปภาพไม่สำเร็จ (อาจติด CORS หรือ Network):", err);
-                return null;
-            }
+            console.warn("ดึงรูปภาพไม่สำเร็จ:", e);
+            return null;
         }
     }
 
@@ -643,7 +650,7 @@
         const tVal = sheet.getCell(`F${currentRow}`);
         tVal.value = r.cost || 0; tVal.font = boldFont; setBorder(tVal);
 
-        // ================= PAGE 3 (รูปภาพ ฝังลงใน EXCEL จริง) =================
+        // ================= PAGE 3 (รูปภาพ ฝังลงใน EXCEL จริงๆ) =================
         const rPage3 = 90;
         sheet.mergeCells(`C${rPage3}:D${rPage3+1}`);
         const title3 = sheet.getCell(`C${rPage3}`);
@@ -668,7 +675,8 @@
         
         const b64Before = await getBase64Image(r.imageBefore);
         if (b64Before) {
-            const imgId = workbook.addImage({ base64: b64Before, extension: 'png' });
+            // ใช้ extension เป็น jpeg และใส่รหัส Base64 ที่ตัด Header ออกแล้ว
+            const imgId = workbook.addImage({ base64: b64Before, extension: 'jpeg' });
             sheet.addImage(imgId, `B${rPage3+5}:D${rPage3+20}`);
         } else if (r.imageBefore) {
             sheet.mergeCells(`B${rPage3+5}:C${rPage3+6}`);
@@ -683,7 +691,8 @@
         
         const b64After = await getBase64Image(r.imageAfter);
         if (b64After) {
-            const imgId2 = workbook.addImage({ base64: b64After, extension: 'png' });
+            // ใช้ extension เป็น jpeg และใส่รหัส Base64 ที่ตัด Header ออกแล้ว
+            const imgId2 = workbook.addImage({ base64: b64After, extension: 'jpeg' });
             sheet.addImage(imgId2, `E${rPage3+5}:F${rPage3+20}`);
         } else if (r.imageAfter) {
             sheet.mergeCells(`E${rPage3+5}:F${rPage3+6}`);
