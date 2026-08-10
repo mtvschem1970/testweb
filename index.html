@@ -459,12 +459,13 @@
     // 2.6 IMPORT FROM EXCEL FUNCTION
     // ----------------------------------------------------------------
     
-    // ฟังก์ชันช่วยแปลงลิงก์ Google Drive ให้เป็นลิงก์รูปภาพโดยตรง
+    // ฟังก์ชันช่วยแปลงลิงก์ Google Drive เวอร์ชันทะลุบล็อก Google 2024
     function convertDriveLink(url) {
         if (!url) return "";
         const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
         if (match && match[1]) {
-            return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+            // ใช้เส้นทาง Google Thumbnail API แทน (เสถียรที่สุดในการโชว์รูปจาก Drive)
+            return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
         }
         return url;
     }
