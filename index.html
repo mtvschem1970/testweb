@@ -458,6 +458,17 @@
     // ----------------------------------------------------------------
     // 2.6 IMPORT FROM EXCEL FUNCTION
     // ----------------------------------------------------------------
+    
+    // ฟังก์ชันช่วยแปลงลิงก์ Google Drive ให้เป็นลิงก์รูปภาพโดยตรง
+    function convertDriveLink(url) {
+        if (!url) return "";
+        const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        if (match && match[1]) {
+            return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+        }
+        return url;
+    }
+
     async function handleImportExcel(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -470,7 +481,6 @@
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, {type: 'array', cellDates: true});
                 
-                // ตรวจสอบว่ามีชีทชื่อ "Requests" หรือไม่
                 if (!workbook.SheetNames.includes("Requests")) {
                     return Swal.fire("ผิดพลาด", "ไม่พบชีทที่ชื่อ 'Requests' ในไฟล์นี้", "error");
                 }
@@ -483,7 +493,7 @@
                 }
                 
                 Swal.fire({ 
-                    title: `กำลังนำเข้าข้อมูล ${rawData.length} รายการ...`, 
+                    title: `กำลังนำเข้าและแปลงไฟล์รูป ${rawData.length} รายการ...`, 
                     text: 'กระบวนการนี้อาจใช้เวลา 1-2 นาที กรุณาอย่าเพิ่งปิดหน้าเว็บ',
                     didOpen: () => Swal.showLoading(), 
                     allowOutsideClick: false 
@@ -491,7 +501,6 @@
                 
                 let successCount = 0;
                 
-                // นำเข้าข้อมูลทีละรายการ
                 for (let i = 0; i < rawData.length; i++) {
                     const row = rawData[i];
                     const jobId = row["Job ID"];
@@ -519,8 +528,9 @@
                         cost: parseFloat(row["Cost"]) || 0,
                         itemsData: row["Items"] || "[]",
                         additionalNotes: row["Notes"] || "",
-                        imageBefore: row["ImageBefore"] || "",
-                        imageAfter: row["ImageAfter"] || "",
+                        // ใช้ฟังก์ชันแปลงลิงก์รูปตรงนี้
+                        imageBefore: convertDriveLink(row["ImageBefore"]),
+                        imageAfter: convertDriveLink(row["ImageAfter"]),
                         userPin: userPin
                     };
                     
@@ -531,10 +541,9 @@
                     successCount++;
                 }
                 
-                Swal.fire("สำเร็จ!", `อัปโหลดประวัติเก่าเข้าสู่ระบบใหม่เรียบร้อยแล้ว ${successCount} รายการ`, "success");
-                event.target.value = ''; // รีเซ็ต input ไฟล์
+                Swal.fire("สำเร็จ!", `อัปโหลดประวัติและแปลงรูปภาพเรียบร้อยแล้ว ${successCount} รายการ`, "success");
+                event.target.value = ''; 
                 
-                // รีโหลดข้อมูลมาแสดงผลใหม่
                 await refreshData(true);
                 switchTab('status'); 
                 
