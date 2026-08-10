@@ -934,6 +934,57 @@
     }
 
     // ----------------------------------------------------------------
+    // 9.5 DELETE JOB (Admin with 2-step verification)
+    // ----------------------------------------------------------------
+    async function deleteJobPrompt(jobId) {
+        const r = appData.reqs.find(x => x.jobID === jobId);
+        if (!r) return Swal.fire('Error', 'ไม่พบข้อมูลงาน', 'error');
+
+        // ชั้นที่ 1: ตรวจสอบรหัส PIN ผู้แจ้ง
+        const { value: enteredUserPin } = await Swal.fire({
+            title: 'ยืนยันการลบงาน (1/2)',
+            text: `กรุณาใส่รหัส PIN ของผู้แจ้งซ่อมสำหรับงาน ${jobId}`,
+            input: 'password',
+            background: '#1e293b', color: '#fff', confirmButtonColor: '#ef4444', showCancelButton: true
+        });
+        if (!enteredUserPin) return;
+        if (String(enteredUserPin) !== String(r.userPin)) return Swal.fire('รหัสไม่ถูกต้อง', 'รหัส PIN ผู้แจ้งไม่ตรงกัน', 'error');
+
+        // ชั้นที่ 2: ตรวจสอบรหัสผ่าน Admin
+        const { value: enteredAdminPass } = await Swal.fire({
+            title: 'ยืนยันการลบงาน (2/2)',
+            text: 'กรุณาใส่รหัสผ่าน Admin เพื่อยืนยันสิทธิ์',
+            input: 'password',
+            background: '#1e293b', color: '#fff', confirmButtonColor: '#ef4444', showCancelButton: true
+        });
+        if (!enteredAdminPass) return;
+        if (enteredAdminPass !== appData.adminPass) return Swal.fire('รหัสไม่ถูกต้อง', 'รหัส Admin ไม่ถูกต้อง', 'error');
+
+        // เตือนครั้งสุดท้ายก่อนลบจริง
+        const { isConfirmed } = await Swal.fire({
+            title: 'ยืนยันการลบถาวร',
+            text: `คุณกำลังจะลบข้อมูลงาน ${jobId} อย่างถาวร ข้อมูลนี้ไม่สามารถกู้คืนได้!`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#475569',
+            confirmButtonText: 'ใช่, ลบเลย!',
+            background: '#1e293b', color: '#fff'
+        });
+
+        if (isConfirmed) {
+            Swal.fire({ title: 'กำลังลบข้อมูล...', didOpen: () => Swal.showLoading() });
+            try {
+                await db.collection('requests').doc(jobId).delete();
+                await refreshData(true);
+                Swal.fire('Deleted!', 'ลบข้อมูลออกจากระบบสำเร็จ', 'success');
+            } catch (e) {
+                Swal.fire('Error', String(e), 'error');
+            }
+        }
+    }
+
+    // ----------------------------------------------------------------
     // 10. RENDERERS
     // ----------------------------------------------------------------
     function renderLists() {
@@ -1043,7 +1094,10 @@
             else if (r.urgency === 'Medium') trCls += ' urgency-medium-blink';
 
             return `<tr class="${trCls}" data-status="${r.status}">
-                <td class="p-3"><button onclick="openModal('${r.jobID}')" class="bg-blue-600 px-2 py-1 rounded text-xs hover:bg-blue-500 transition">Edit</button></td>
+                <td class="p-3 whitespace-nowrap">
+                    <button onclick="openModal('${r.jobID}')" class="bg-blue-600 px-2 py-1 rounded text-xs hover:bg-blue-500 transition mr-1 mb-1 md:mb-0">Edit</button>
+                    <button onclick="deleteJobPrompt('${r.jobID}')" class="bg-red-600 px-2 py-1 rounded text-xs hover:bg-red-500 transition">Del</button>
+                </td>
                 <td class="p-3 font-mono text-xs">${r.jobID}</td>
                 <td class="p-3 text-sm">${r.requesterName}</td>
                 <td class="p-3 text-sm">${r.equipmentLocation}</td>
