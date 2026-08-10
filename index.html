@@ -8,7 +8,9 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- เพิ่มไลบรารีสำหรับแปลงไฟล์ Excel (SheetJS) -->
+    <!-- ไลบรารีสำหรับสร้างและดาวน์โหลดไฟล์ Excel (ExcelJS & FileSaver) ระดับโปร -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -213,8 +215,8 @@
                         <input type="file" id="importExcelFile" accept=".xlsx, .xls" class="hidden" onchange="handleImportExcel(event)">
                         <button onclick="document.getElementById('importExcelFile').click()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-lg text-sm font-bold flex items-center gap-1 transition">📤 Import ข้อมูลเก่า</button>
                         
-                        <!-- ปุ่มดาวน์โหลด Excel -->
-                        <button onclick="exportToExcel()" class="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded-lg text-sm font-bold flex items-center gap-1 transition">📥 ดาวน์โหลด Excel</button>
+                        <!-- ปุ่มดาวน์โหลด Excel รวมทั้งหมด -->
+                        <button onclick="exportToExcelAll()" class="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded-lg text-sm font-bold flex items-center gap-1 transition">📥 โหลดรายงานรวม</button>
                         
                         <select id="adminStatusFilter" onchange="applyAdminFilters()" class="bg-slate-900 border border-slate-600 rounded-lg px-3 py-1 text-sm focus:outline-none focus:border-corp-gold text-slate-300">
                             <option value="All">แสดงทั้งหมด</option>
@@ -365,6 +367,7 @@
                     </div>
                 </div>
                 <div id="d-verify-area" class="pt-2"></div>
+                <div id="d-download-area" class="pt-2 hidden"></div>
             </div>
             <div class="p-4 bg-slate-800 border-t border-slate-600">
                 <button onclick="closeDetailModal()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded transition">ปิดหน้าต่าง</button>
@@ -399,7 +402,7 @@
         reqs:    [],
         lists:   { depts: [], techs: [] },
         isAdmin: false,
-        adminPass: '888', // Fallback ถ้ายังไม่มีในฐานข้อมูล
+        adminPass: '888',
         cfg:     { jobId: { prefix: 'MTN', startNum: 1 } }
     };
 
@@ -416,9 +419,250 @@
     const debouncedAdminSearch = debounce(() => applyAdminFilters());
 
     // ----------------------------------------------------------------
-    // 2.5 EXPORT TO EXCEL FUNCTION
+    // 2.5 EXPORT REPORT TO EXCEL FORMAT (100% IDENTICAL TO OLD FORMAT)
     // ----------------------------------------------------------------
-    function exportToExcel() {
+    async function exportJobExcel(jobId) {
+        const r = appData.reqs.find(x => x.jobID === jobId);
+        if (!r) return;
+
+        Swal.fire({ title: 'กำลังสร้างไฟล์ Excel...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+
+        try {
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet(jobId, {
+                pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 3 }
+            });
+
+            // กำหนดความกว้างคอลัมน์ให้คล้ายต้นฉบับ
+            sheet.getColumn(1).width = 5;  // A
+            sheet.getColumn(2).width = 25; // B (หัวข้อ)
+            sheet.getColumn(3).width = 35; // C (ข้อมูล)
+            sheet.getColumn(4).width = 15; // D (หัวข้อรอง)
+            sheet.getColumn(5).width = 25; // E (ข้อมูลรอง)
+            sheet.getColumn(6).width = 15; // F (รวม)
+
+            const thFont = { name: 'Sarabun', size: 11 };
+            const boldFont = { name: 'Sarabun', size: 11, bold: true };
+            const titleFont = { name: 'Sarabun', size: 14, bold: true };
+
+            const setBorder = (cell) => {
+                cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+            };
+
+            // ================= PAGE 1 =================
+            sheet.mergeCells('C1:D2');
+            const title1 = sheet.getCell('C1');
+            title1.value = 'ใบรายงานสรุปงานซ่อมบำรุง\nMAINTENANCE REPAIR JOB REPORT';
+            title1.font = titleFont;
+            title1.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+
+            sheet.mergeCells('E1:F2');
+            const page1 = sheet.getCell('E1');
+            page1.value = `Page 1/3\nJob ID: ${jobId}`;
+            page1.font = boldFont;
+            page1.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
+
+            // หมวด 1
+            sheet.mergeCells('B3:F3');
+            const h1 = sheet.getCell('B3');
+            h1.value = ' 1. ข้อมูลทั่วไป (General Information)';
+            h1.font = boldFont;
+            h1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+
+            sheet.getCell('B4').value = 'ผู้แจ้ง:';
+            sheet.getCell('C4').value = r.requesterName || '-';
+            sheet.getCell('D4').value = 'สถานะงาน:';
+            sheet.getCell('E4').value = r.status || '-';
+            
+            sheet.getCell('B5').value = 'แผนก:';
+            sheet.getCell('C5').value = r.positionDept || '-';
+            sheet.getCell('D5').value = 'ความเร่งด่วน:';
+            sheet.getCell('E5').value = r.urgency === 'High' ? 'ด่วนมาก' : (r.urgency === 'Medium' ? 'ด่วน' : 'ปกติ');
+
+            sheet.getCell('B6').value = 'ข้อมูลติดต่อกลับ:';
+            sheet.getCell('C6').value = r.phoneNumber || '-';
+            sheet.getCell('D6').value = 'วันที่แจ้ง:';
+            sheet.getCell('E6').value = r.requestDate ? new Date(r.requestDate).toLocaleString('th-TH') : '-';
+
+            // หมวด 2
+            sheet.mergeCells('B8:F8');
+            const h2 = sheet.getCell('B8');
+            h2.value = ' 2. ปัญหา/อาการเสีย (Problem Description)';
+            h2.font = boldFont;
+            h2.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+
+            sheet.getCell('B9').value = 'อุปกรณ์:';
+            sheet.mergeCells('C9:F9');
+            sheet.getCell('C9').value = r.equipmentLocation || '-';
+
+            sheet.getCell('B10').value = 'รายละเอียด:';
+            sheet.mergeCells('C10:F11');
+            const prob = sheet.getCell('C10');
+            prob.value = r.problemDetails || '-';
+            prob.alignment = { vertical: 'top', wrapText: true };
+
+            // หมวด 3
+            sheet.mergeCells('B13:F13');
+            const h3 = sheet.getCell('B13');
+            h3.value = ' 3. การดำเนินงาน (Action Taken)';
+            h3.font = boldFont;
+            h3.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+
+            sheet.getCell('B14').value = 'ช่างผู้รับผิดชอบ:';
+            sheet.mergeCells('C14:F14');
+            sheet.getCell('C14').value = r.technician || '-';
+
+            sheet.getCell('B15').value = 'เริ่มงาน:';
+            sheet.getCell('C15').value = r.acceptedDate ? new Date(r.acceptedDate).toLocaleString('th-TH') : '-';
+            sheet.getCell('D15').value = 'เสร็จสิ้น:';
+            sheet.getCell('E15').value = r.completedDate ? new Date(r.completedDate).toLocaleString('th-TH') : '-';
+
+            sheet.getCell('B16').value = 'วิธีแก้ไข:';
+            sheet.mergeCells('C16:F17');
+            const rem = sheet.getCell('C16');
+            rem.value = r.adminRemarks || '-';
+            rem.alignment = { vertical: 'top', wrapText: true };
+
+            sheet.getCell('B18').value = 'หมายเหตุ:';
+            sheet.mergeCells('C18:F18');
+            sheet.getCell('C18').value = r.additionalNotes || '-';
+
+            // ลายเซ็น
+            sheet.mergeCells('B21:C21');
+            sheet.getCell('B21').value = 'ผู้แจ้ง (Requester)';
+            sheet.getCell('B21').alignment = { horizontal: 'center' };
+            sheet.getCell('B21').font = boldFont;
+
+            sheet.mergeCells('E21:F21');
+            sheet.getCell('E21').value = 'ช่างผู้รับผิดชอบ (Technician)';
+            sheet.getCell('E21').alignment = { horizontal: 'center' };
+            sheet.getCell('E21').font = boldFont;
+
+            sheet.mergeCells('B23:C24');
+            const sigReq = sheet.getCell('B23');
+            sigReq.value = `✅ VERIFIED via PIN\n( ${r.requesterName} )\nDate: ${r.completedDate ? new Date(r.completedDate).toLocaleString('th-TH') : '-'}`;
+            sigReq.alignment = { horizontal: 'center', wrapText: true };
+
+            sheet.mergeCells('E23:F24');
+            const sigTech = sheet.getCell('E23');
+            sigTech.value = `🛠️ JOB COMPLETED\n( ${r.technician || '-'} )\nDate: ${r.completedDate ? new Date(r.completedDate).toLocaleString('th-TH') : '-'}`;
+            sigTech.alignment = { horizontal: 'center', wrapText: true };
+
+            // จัดฟอนต์ Sarabun ให้ทั้ง Sheet
+            sheet.eachRow((row) => {
+                row.eachCell((cell) => {
+                    if (!cell.font) cell.font = thFont;
+                    else cell.font.name = 'Sarabun';
+                });
+            });
+
+            // ================= PAGE 2 (รายการอะไหล่) =================
+            const rPage2 = 45;
+            sheet.mergeCells(`C${rPage2}:D${rPage2+1}`);
+            const title2 = sheet.getCell(`C${rPage2}`);
+            title2.value = 'ใบรายงานสรุปงานซ่อมบำรุง\nMAINTENANCE REPAIR JOB REPORT';
+            title2.font = titleFont;
+            title2.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+
+            sheet.mergeCells(`E${rPage2}:F${rPage2+1}`);
+            const page2 = sheet.getCell(`E${rPage2}`);
+            page2.value = `Page 2/3\nJob ID: ${jobId}`;
+            page2.font = boldFont;
+            page2.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
+
+            sheet.mergeCells(`B${rPage2+3}:F${rPage2+3}`);
+            const h4 = sheet.getCell(`B${rPage2+3}`);
+            h4.value = ' รายการอุปกรณ์ที่ใช้ (Spare Parts)';
+            h4.font = boldFont;
+            h4.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+
+            const thB = sheet.getCell(`B${rPage2+4}`); thB.value = 'ลำดับ'; setBorder(thB);
+            const thC = sheet.getCell(`C${rPage2+4}`); thC.value = 'รายการ (Item Name)'; setBorder(thC);
+            const thD = sheet.getCell(`D${rPage2+4}`); thD.value = 'จำนวน'; setBorder(thD);
+            const thE = sheet.getCell(`E${rPage2+4}`); thE.value = 'หน่วยละ'; setBorder(thE);
+            const thF = sheet.getCell(`F${rPage2+4}`); thF.value = 'รวม'; setBorder(thF);
+
+            let items = [];
+            try { items = JSON.parse(r.itemsData || '[]'); } catch(e){}
+            let currentRow = rPage2+5;
+            
+            if(items.length === 0) {
+                sheet.getCell(`B${currentRow}`).value = '-'; setBorder(sheet.getCell(`B${currentRow}`));
+                sheet.getCell(`C${currentRow}`).value = 'ไม่มีการใช้อะไหล่'; setBorder(sheet.getCell(`C${currentRow}`));
+                sheet.getCell(`D${currentRow}`).value = '-'; setBorder(sheet.getCell(`D${currentRow}`));
+                sheet.getCell(`E${currentRow}`).value = '-'; setBorder(sheet.getCell(`E${currentRow}`));
+                sheet.getCell(`F${currentRow}`).value = '-'; setBorder(sheet.getCell(`F${currentRow}`));
+                currentRow++;
+            } else {
+                items.forEach((item, idx) => {
+                    sheet.getCell(`B${currentRow}`).value = idx + 1; setBorder(sheet.getCell(`B${currentRow}`));
+                    sheet.getCell(`C${currentRow}`).value = item.name; setBorder(sheet.getCell(`C${currentRow}`));
+                    sheet.getCell(`D${currentRow}`).value = item.quantity; setBorder(sheet.getCell(`D${currentRow}`));
+                    sheet.getCell(`E${currentRow}`).value = item.unitPrice; setBorder(sheet.getCell(`E${currentRow}`));
+                    sheet.getCell(`F${currentRow}`).value = item.total; setBorder(sheet.getCell(`F${currentRow}`));
+                    currentRow++;
+                });
+            }
+            
+            sheet.mergeCells(`B${currentRow}:E${currentRow}`);
+            const tLabel = sheet.getCell(`B${currentRow}`);
+            tLabel.value = 'Total:'; tLabel.alignment = { horizontal: 'right' }; tLabel.font = boldFont; setBorder(tLabel);
+            const tVal = sheet.getCell(`F${currentRow}`);
+            tVal.value = r.cost || 0; tVal.font = boldFont; setBorder(tVal);
+
+            // ================= PAGE 3 (รูปภาพ) =================
+            const rPage3 = 90;
+            sheet.mergeCells(`C${rPage3}:D${rPage3+1}`);
+            const title3 = sheet.getCell(`C${rPage3}`);
+            title3.value = 'ใบรายงานสรุปงานซ่อมบำรุง\nMAINTENANCE REPAIR JOB REPORT';
+            title3.font = titleFont;
+            title3.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+
+            sheet.mergeCells(`E${rPage3}:F${rPage3+1}`);
+            const page3 = sheet.getCell(`E${rPage3}`);
+            page3.value = `Page 3/3\nJob ID: ${jobId}`;
+            page3.font = boldFont;
+            page3.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
+
+            sheet.mergeCells(`B${rPage3+3}:F${rPage3+3}`);
+            const h5 = sheet.getCell(`B${rPage3+3}`);
+            h5.value = ' หลักฐานรูปภาพ (Photographic Evidence)';
+            h5.font = boldFont;
+            h5.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+
+            sheet.mergeCells(`B${rPage3+4}:C${rPage3+4}`);
+            sheet.getCell(`B${rPage3+4}`).value = '📷 รูปก่อนซ่อม (Before Repair):';
+            if (r.imageBefore) {
+                sheet.mergeCells(`B${rPage3+5}:C${rPage3+6}`);
+                sheet.getCell(`B${rPage3+5}`).value = { text: '>> คลิกลิงก์เพื่อเปิดดูรูปภาพ <<', hyperlink: r.imageBefore };
+                sheet.getCell(`B${rPage3+5}`).font = { ...thFont, color: { argb: 'FF0563C1' }, underline: true };
+            } else {
+                sheet.getCell(`B${rPage3+5}`).value = '- ไม่มีรูปภาพ -';
+            }
+
+            sheet.mergeCells(`E${rPage3+4}:F${rPage3+4}`);
+            sheet.getCell(`E${rPage3+4}`).value = '📷 รูปหลังซ่อม (After Repair):';
+            if (r.imageAfter) {
+                sheet.mergeCells(`E${rPage3+5}:F${rPage3+6}`);
+                sheet.getCell(`E${rPage3+5}`).value = { text: '>> คลิกลิงก์เพื่อเปิดดูรูปภาพ <<', hyperlink: r.imageAfter };
+                sheet.getCell(`E${rPage3+5}`).font = { ...thFont, color: { argb: 'FF0563C1' }, underline: true };
+            } else {
+                sheet.getCell(`E${rPage3+5}`).value = '- ไม่มีรูปภาพ -';
+            }
+
+            // เขียนไฟล์ออกและดาวน์โหลดลงเครื่อง
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `${jobId}_Report.xlsx`);
+            
+            Swal.close();
+        } catch (e) {
+            console.error(e);
+            Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถสร้างไฟล์ Excel ได้: ' + e.message, 'error');
+        }
+    }
+
+    // ฟังก์ชันส่งออกตารางสรุปรวมทั้งหมด
+    function exportToExcelAll() {
         if (!appData.reqs || appData.reqs.length === 0) {
             return Swal.fire('ไม่มีข้อมูล', 'ยังไม่มีข้อมูลแจ้งซ่อมในระบบ', 'warning');
         }
@@ -447,7 +691,7 @@
         XLSX.utils.book_append_sheet(workbook, worksheet, "Maintenance_Report");
         
         const dateStr = new Date().toISOString().split('T')[0];
-        XLSX.writeFile(workbook, `Maintenance_Report_${dateStr}.xlsx`);
+        XLSX.writeFile(workbook, `Maintenance_Summary_${dateStr}.xlsx`);
     }
 
     // ----------------------------------------------------------------
@@ -617,7 +861,6 @@
                 if (data.adminPass) appData.adminPass = data.adminPass;
                 if (data.jobIdConfig) appData.cfg.jobId = data.jobIdConfig;
             } else {
-                // สร้างการตั้งค่าเริ่มต้นใน Firebase หากยังไม่มี
                 await db.collection('system').doc('config').set({ 
                     lists: { depts: [], techs: [] }, 
                     adminPass: '888',
@@ -625,7 +868,6 @@
                 }, {merge: true});
             }
             
-            // อัปเดตข้อมูลบนหน้าจอ
             renderLists();
             renderDrops();
             
@@ -1174,6 +1416,16 @@
             ? `<button onclick="closeDetailModal();verifyUserJob('${r.jobID}','${r.userPin||''}')" class="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 text-white font-bold py-3 rounded shadow-lg border border-green-400 mt-2 animate-pulse">🔒 ยืนยันจบงาน (Verify & Close)</button>`
             : '';
 
+        // ถ้างานถูกปิดแล้ว ให้โชว์ปุ่มดาวน์โหลดใบงานซ่อมเดี่ยวๆ
+        const dDiv = $('d-download-area');
+        if (r.status === 'Closed' || r.status === 'Done') {
+            dDiv.innerHTML = `<button onclick="exportJobExcel('${r.jobID}')" class="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 text-white font-bold py-3 rounded shadow-lg border border-blue-400 mt-2">🖨️ ดาวน์โหลดใบงานซ่อม (Excel)</button>`;
+            dDiv.classList.remove('hidden');
+        } else {
+            dDiv.innerHTML = '';
+            dDiv.classList.add('hidden');
+        }
+
         $('detailModal').style.display = 'flex';
     }
     function closeDetailModal() { $('detailModal').style.display = 'none'; }
@@ -1193,9 +1445,8 @@
         Swal.fire({ title: 'ตรวจสอบรหัสผ่าน...', didOpen: () => Swal.showLoading() });
         
         try {
-            // ดึงข้อมูลรหัสผ่านจาก Firebase โดยตรง
             const doc = await db.collection('system').doc('config').get();
-            let correctPass = '888'; // รหัสผ่านสำรอง
+            let correctPass = '888';
             
             if (doc.exists && doc.data().adminPass) {
                 correctPass = doc.data().adminPass;
