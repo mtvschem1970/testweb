@@ -158,19 +158,18 @@
         <div id="view-settings" class="view-section hidden max-w-5xl mx-auto fade-in">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div class="bg-corp-lightBlue rounded-xl border border-slate-700 p-6 shadow-lg">
-                    <h3 class="text-lg font-bold text-corp-gold mb-4 border-b border-slate-700 pb-2">🔗 System Config (Firebase)</h3>
-                    <div class="mb-4 text-xs text-green-400">เชื่อมต่อผ่าน Firebase เรียบร้อย ไม่จำเป็นต้องใช้ลิงก์ GAS อีกต่อไป</div>
+                    <h3 class="text-lg font-bold text-corp-gold mb-4 border-b border-slate-700 pb-2">🔗 System Config (Firebase Cloud Sync)</h3>
+                    <div class="mb-4 text-xs text-green-400">การตั้งค่าทั้งหมดถูกเก็บไว้ใน Firebase อย่างปลอดภัยและซิงค์ตรงกันทุกอุปกรณ์</div>
                     <div class="border-t border-slate-700 pt-4 mt-4">
-                        <h4 class="text-sm font-bold text-white mb-3">🆔 ตั้งค่าหมายเลขงาน (Job ID)</h4>
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div><label class="block text-xs text-slate-400 mb-1">คำนำหน้า (Prefix)</label><input id="setting-id-prefix" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-xs text-slate-300" placeholder="เช่น MTN"></div>
-                            <div><label class="block text-xs text-slate-400 mb-1">เลขเริ่มต้น (Start Number)</label><input type="number" id="setting-id-start" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-xs text-slate-300" placeholder="เช่น 1"></div>
+                            <div><label class="block text-xs text-slate-400 mb-1">เลขเริ่มต้น (Start)</label><input type="number" id="setting-id-start" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-xs text-slate-300" placeholder="เช่น 1"></div>
+                            <div><label class="block text-xs text-yellow-500 mb-1 font-bold">🔑 รหัสผ่าน Admin</label><input type="text" id="setting-admin-pass" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-xs text-yellow-400 font-bold" placeholder="ตั้งรหัสใหม่"></div>
                         </div>
-                        <p class="text-xs text-slate-500 mt-2">รูปแบบตัวอย่าง: <span id="id-preview" class="text-corp-gold font-mono">MTN-2026-0001</span></p>
+                        <p class="text-xs text-slate-500 mt-3">รูปแบบ Job ID ตัวอย่าง: <span id="id-preview" class="text-corp-gold font-mono">MTN-2026-0001</span></p>
                     </div>
                     <div class="flex gap-2 mt-4">
-                        <button onclick="saveSystemSettings()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded text-sm font-bold">บันทึก & รีโหลด</button>
-                        <button onclick="resetConfig()"        class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm">Reset</button>
+                        <button onclick="saveSystemSettings()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded text-sm font-bold shadow-lg">💾 บันทึกการตั้งค่าลงระบบ</button>
                     </div>
                 </div>
                 <div class="bg-corp-lightBlue rounded-xl border border-slate-700 p-6 shadow-lg">
@@ -396,16 +395,12 @@
     // ----------------------------------------------------------------
     // 2. CONFIG & STATE
     // ----------------------------------------------------------------
-    const DEFAULT_CFG = {
-        adminPass:    '888',
-        jobId:        { prefix: 'MTN', startNum: 1 }
-    };
-
     const appData = {
         reqs:    [],
         lists:   { depts: [], techs: [] },
         isAdmin: false,
-        cfg:     { ...DEFAULT_CFG }
+        adminPass: '888', // Fallback ถ้ายังไม่มีในฐานข้อมูล
+        cfg:     { jobId: { prefix: 'MTN', startNum: 1 } }
     };
 
     const $ = id => document.getElementById(id);
@@ -458,13 +453,10 @@
     // ----------------------------------------------------------------
     // 2.6 IMPORT FROM EXCEL FUNCTION
     // ----------------------------------------------------------------
-    
-    // ฟังก์ชันช่วยแปลงลิงก์ Google Drive เวอร์ชันทะลุบล็อก Google 2024
     function convertDriveLink(url) {
         if (!url) return "";
         const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
         if (match && match[1]) {
-            // ใช้เส้นทาง Google Thumbnail API แทน (เสถียรที่สุดในการโชว์รูปจาก Drive)
             return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
         }
         return url;
@@ -529,7 +521,6 @@
                         cost: parseFloat(row["Cost"]) || 0,
                         itemsData: row["Items"] || "[]",
                         additionalNotes: row["Notes"] || "",
-                        // ใช้ฟังก์ชันแปลงลิงก์รูปตรงนี้
                         imageBefore: convertDriveLink(row["ImageBefore"]),
                         imageAfter: convertDriveLink(row["ImageAfter"]),
                         userPin: userPin
@@ -608,27 +599,74 @@
     // 4. BOOTSTRAP
     // ----------------------------------------------------------------
     document.addEventListener('DOMContentLoaded', () => {
-        loadSettings();
-        Promise.all([refreshData(true), loadLists()]);
+        $('setting-id-prefix').addEventListener('input', updateIdPreview);
+        $('setting-id-start').addEventListener('input',  updateIdPreview);
+        
+        Promise.all([refreshData(true), loadSystemConfig()]);
     });
 
     // ----------------------------------------------------------------
-    // 5. LIST MANAGEMENT (Firebase)
+    // 5. SYSTEM CONFIG & LIST MANAGEMENT (Firebase)
     // ----------------------------------------------------------------
-    async function loadLists(manual = false) {
+    async function loadSystemConfig(manual = false) {
         try {
             const doc = await db.collection('system').doc('config').get();
-            if (doc.exists && doc.data().lists) {
-                appData.lists = doc.data().lists;
+            if (doc.exists) {
+                const data = doc.data();
+                if (data.lists) appData.lists = data.lists;
+                if (data.adminPass) appData.adminPass = data.adminPass;
+                if (data.jobIdConfig) appData.cfg.jobId = data.jobIdConfig;
             } else {
-                await db.collection('system').doc('config').set({ lists: { depts: [], techs: [] } }, {merge: true});
+                // สร้างการตั้งค่าเริ่มต้นใน Firebase หากยังไม่มี
+                await db.collection('system').doc('config').set({ 
+                    lists: { depts: [], techs: [] }, 
+                    adminPass: '888',
+                    jobIdConfig: { prefix: 'MTN', startNum: 1 }
+                }, {merge: true});
             }
+            
+            // อัปเดตข้อมูลบนหน้าจอ
             renderLists();
             renderDrops();
+            
+            $('setting-admin-pass').value = appData.adminPass;
+            $('setting-id-prefix').value  = appData.cfg.jobId.prefix;
+            $('setting-id-start').value   = appData.cfg.jobId.startNum;
+            updateIdPreview();
+            
         } catch (e) {
-            console.warn('loadLists failed', e);
+            console.warn('loadSystemConfig failed', e);
         }
         if (manual) Swal.close();
+    }
+
+    function updateIdPreview() {
+        const p      = $('setting-id-prefix').value || 'XXX';
+        const s      = $('setting-id-start').value  || '1';
+        const padded = s.toString().padStart(4, '0');
+        $('id-preview').innerText = `${p}-${new Date().getFullYear()}-${padded}`;
+    }
+
+    async function saveSystemSettings() {
+        const newPrefix = $('setting-id-prefix').value.trim() || 'MTN';
+        const newStartNum = parseInt($('setting-id-start').value.trim()) || 1;
+        const newPass = $('setting-admin-pass').value.trim() || '888';
+
+        appData.cfg.jobId = { prefix: newPrefix, startNum: newStartNum };
+        appData.adminPass = newPass;
+        
+        Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
+        try {
+            await db.collection('system').doc('config').set({
+                adminPass: newPass,
+                jobIdConfig: appData.cfg.jobId
+            }, { merge: true });
+            
+            Swal.fire('สำเร็จ', 'บันทึกการตั้งค่าลงระบบคลาวด์เรียบร้อย', 'success');
+            updateIdPreview();
+        } catch (e) {
+            Swal.fire('Error', String(e), 'error');
+        }
     }
 
     async function modifyList(type, act, id) {
@@ -643,7 +681,7 @@
             } else {
                 await ref.update({ [`lists.${type}`]: firebase.firestore.FieldValue.arrayRemove(val) });
             }
-            await loadLists();
+            await loadSystemConfig();
             Swal.close();
         } catch (e) {
             Swal.fire('Error', String(e), 'error');
@@ -1087,54 +1125,41 @@
     function closeDetailModal() { $('detailModal').style.display = 'none'; }
 
     // ----------------------------------------------------------------
-    // 11. SYSTEM SETTINGS
+    // 12. AUTH & MODAL HELPERS (ดึงรหัสผ่านจาก Firebase)
     // ----------------------------------------------------------------
-    function loadSettings() {
-        const saved = JSON.parse(localStorage.getItem('maint_cfg_fb') || '{}');
-        appData.cfg = { ...DEFAULT_CFG, ...saved };
-        if (!appData.cfg.jobId) appData.cfg.jobId = { ...DEFAULT_CFG.jobId };
+    async function showLoginModal() {
+        const { value: enteredPass } = await Swal.fire({ 
+            title: 'Admin Login', 
+            input: 'password', 
+            background: '#1e293b', 
+            color: '#fff' 
+        });
+        if (!enteredPass) return;
 
-        setVal('setting-id-prefix',  appData.cfg.jobId.prefix || 'MTN');
-        setVal('setting-id-start',   appData.cfg.jobId.startNum || 1);
-
-        updateIdPreview();
-        $('setting-id-prefix').addEventListener('input', updateIdPreview);
-        $('setting-id-start').addEventListener('input',  updateIdPreview);
-    }
-
-    function updateIdPreview() {
-        const p      = $('setting-id-prefix').value || 'XXX';
-        const s      = $('setting-id-start').value  || '1';
-        const padded = s.toString().padStart(4, '0');
-        $('id-preview').innerText = `${p}-${new Date().getFullYear()}-${padded}`;
-    }
-
-    function saveSystemSettings() {
-        appData.cfg.jobId = {
-            prefix:   $('setting-id-prefix').value.trim() || 'MTN',
-            startNum: parseInt($('setting-id-start').value.trim()) || 1
-        };
-        localStorage.setItem('maint_cfg_fb', JSON.stringify(appData.cfg));
-        location.reload();
-    }
-
-    function resetConfig() { localStorage.removeItem('maint_cfg_fb'); location.reload(); }
-
-    // ----------------------------------------------------------------
-    // 12. AUTH & MODAL HELPERS
-    // ----------------------------------------------------------------
-    function showLoginModal() {
-        Swal.fire({ title: 'Admin', input: 'password', background: '#1e293b', color: '#fff' }).then(({ value }) => {
-            if (value === appData.cfg.adminPass) {
+        Swal.fire({ title: 'ตรวจสอบรหัสผ่าน...', didOpen: () => Swal.showLoading() });
+        
+        try {
+            // ดึงข้อมูลรหัสผ่านจาก Firebase โดยตรง
+            const doc = await db.collection('system').doc('config').get();
+            let correctPass = '888'; // รหัสผ่านสำรอง
+            
+            if (doc.exists && doc.data().adminPass) {
+                correctPass = doc.data().adminPass;
+            }
+            
+            if (enteredPass === correctPass) {
                 appData.isAdmin = true;
                 document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
                 $('btnLogin').classList.add('hidden');
                 $('btnLogout').classList.remove('hidden');
+                Swal.close();
                 switchTab('settings');
-            } else if (value) {
-                Swal.fire('Error', 'รหัสผิด', 'error');
+            } else {
+                Swal.fire('Error', 'รหัสผ่านไม่ถูกต้อง', 'error');
             }
-        });
+        } catch (e) {
+            Swal.fire('Error', 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้', 'error');
+        }
     }
 
     function logout() { location.reload(); }
