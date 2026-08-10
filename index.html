@@ -434,18 +434,16 @@
     // 2.5 EXPORT REPORT TO EXCEL (WITH IMAGES) & BATCH EXPORT
     // ----------------------------------------------------------------
 
-    // ฟังก์ชันดึงรูปภาพและแปลงให้เป็น Base64 แบบสมบูรณ์ (ตัด Header ทิ้งให้ Excel อ่านออก)
+    // ฟังก์ชันดึงรูปภาพและแปลงให้เป็น Base64 แบบสมบูรณ์
     async function getBase64Image(url) {
-        if (!url || url.includes('drive.google')) return null; // ข้ามรูปเก่าที่มาจากไดรฟ์
+        if (!url || url.includes('drive.google')) return null; 
         
         try {
             let res;
             try {
-                // ลองดึงตรงๆ ก่อน
                 res = await fetch(url);
                 if(!res.ok) throw new Error("Fetch failed");
             } catch(e) {
-                // ถ้าติดบล็อก ใช้ Proxy ยอดนิยมเพื่อรับรูปภาพแทน
                 const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
                 res = await fetch(proxyUrl);
             }
@@ -457,7 +455,6 @@
                 const reader = new FileReader();
                 reader.onloadend = () => {
                     const result = reader.result;
-                    // ตัด 'data:image/jpeg;base64,' ทิ้ง เพราะ ExcelJS ต้องการแค่รหัสเพียวๆ
                     if (result && result.includes(',')) {
                         resolve(result.split(',')[1]); 
                     } else {
@@ -488,8 +485,8 @@
 
         // จัดความกว้าง Column เพื่อให้พอดีกับกระดาษ A4 (A กับ G เป็น Margin รอบนอก)
         sheet.getColumn(1).width = 3;   // A
-        sheet.getColumn(2).width = 15;  // B
-        sheet.getColumn(3).width = 30;  // C
+        sheet.getColumn(2).width = 16;  // B
+        sheet.getColumn(3).width = 32;  // C
         sheet.getColumn(4).width = 15;  // D
         sheet.getColumn(5).width = 15;  // E
         sheet.getColumn(6).width = 15;  // F
@@ -497,29 +494,26 @@
 
         const thFont = { name: 'Sarabun', size: 12 };
         const boldFont = { name: 'Sarabun', size: 12, bold: true };
-        const titleFont = { name: 'Sarabun', size: 16, bold: true };
 
         const setBorder = (cell) => {
             cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
         };
 
         const drawTitle = (rowStart, pageNum) => {
-            // หัวข้อตรงกลาง B ถึง F เป๊ะๆ
-            sheet.mergeCells(`B${rowStart}:F${rowStart+1}`);
+            // หัวข้อตรงกลาง B ถึง F (รวม 3 บรรทัด)
+            sheet.mergeCells(`B${rowStart}:F${rowStart+2}`);
             const title = sheet.getCell(`B${rowStart}`);
-            title.value = 'ใบรายงานสรุปงานซ่อมบำรุง\nMAINTENANCE REPAIR JOB REPORT';
-            title.font = titleFont;
+            title.value = {
+                richText: [
+                    { font: { name: 'Sarabun', size: 16, bold: true }, text: 'ใบรายงานสรุปงานซ่อมบำรุง\nMAINTENANCE REPAIR JOB REPORT\n' },
+                    { font: { name: 'Sarabun', size: 12, bold: true, color: { argb: 'FF475569' } }, text: `Page ${pageNum}/3   |   Job ID: ${jobId}` }
+                ]
+            };
             title.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-
-            // เลขหน้าไปโผล่ที่คอลัมน์ G เพื่อไม่ให้กวนพื้นที่ตรงกลาง
-            sheet.mergeCells(`G${rowStart}:G${rowStart+1}`);
-            const pg = sheet.getCell(`G${rowStart}`);
-            pg.value = `Page ${pageNum}/3\n${jobId}`;
-            pg.font = { name: 'Sarabun', size: 9, bold: true };
-            pg.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
             
             sheet.getRow(rowStart).height = 25;
             sheet.getRow(rowStart+1).height = 25;
+            sheet.getRow(rowStart+2).height = 20;
         };
 
         // ================= PAGE 1 =================
