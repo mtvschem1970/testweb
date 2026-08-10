@@ -211,6 +211,7 @@
                 <div class="p-4 border-b border-slate-700 bg-slate-800 flex flex-col md:flex-row justify-between items-center gap-3">
                     <h2 class="text-xl font-bold text-corp-gold">📋 จัดการงานซ่อม</h2>
                     
+                    <!-- เมนูการกระทำชุดใหม่ของ Admin -->
                     <div class="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
                         <!-- ปุ่มโหลดใบงานที่เลือก (แบบมีรูป) -->
                         <button onclick="exportSelectedJobsExcel()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1 rounded-lg text-sm font-bold flex items-center gap-1 transition whitespace-nowrap">🖨️ โหลดใบงานที่เลือก</button>
@@ -232,6 +233,7 @@
                     </div>
                 </div>
                 <div class="overflow-x-auto">
+                    <!-- ตารางจัดเรียงใหม่ตามคำขอ -->
                     <table class="w-full text-left border-collapse" id="adminTable">
                         <thead class="bg-slate-900 text-slate-400 uppercase text-xs">
                             <tr>
@@ -470,237 +472,274 @@
         }
     }
 
-    // ฟังก์ชันสร้าง Sheet รายบุคคล (แบบฟอร์ม 100%)
+    // ฟังก์ชันสร้าง Sheet รายบุคคล (แบบฟอร์ม 100% ตรงกลาง A4)
     async function buildJobSheet(workbook, jobId) {
         const r = appData.reqs.find(x => x.jobID === jobId);
         if (!r) return;
 
         const sheet = workbook.addWorksheet(jobId, {
-            pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 3 }
+            pageSetup: { 
+                paperSize: 9, // A4
+                orientation: 'portrait', 
+                fitToPage: false, // ปิด FitToPage เพื่อให้การตัดหน้า (Page Break) ทำงานสมบูรณ์
+                margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 }
+            }
         });
 
-        sheet.getColumn(1).width = 5;  
-        sheet.getColumn(2).width = 25; 
-        sheet.getColumn(3).width = 35; 
-        sheet.getColumn(4).width = 15; 
-        sheet.getColumn(5).width = 25; 
-        sheet.getColumn(6).width = 25; // ให้พื้นที่รูปภาพด้านขวากว้างขึ้นเล็กน้อย
+        // จัดความกว้าง Column เพื่อให้พอดีกับกระดาษ A4 (A กับ G เป็น Margin รอบนอก)
+        sheet.getColumn(1).width = 3;   // A
+        sheet.getColumn(2).width = 15;  // B
+        sheet.getColumn(3).width = 30;  // C
+        sheet.getColumn(4).width = 15;  // D
+        sheet.getColumn(5).width = 15;  // E
+        sheet.getColumn(6).width = 15;  // F
+        sheet.getColumn(7).width = 3;   // G
 
-        const thFont = { name: 'Sarabun', size: 11 };
-        const boldFont = { name: 'Sarabun', size: 11, bold: true };
-        const titleFont = { name: 'Sarabun', size: 14, bold: true };
+        const thFont = { name: 'Sarabun', size: 12 };
+        const boldFont = { name: 'Sarabun', size: 12, bold: true };
+        const titleFont = { name: 'Sarabun', size: 16, bold: true };
 
         const setBorder = (cell) => {
             cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
         };
 
+        const drawTitle = (rowStart, pageNum) => {
+            // หัวข้อตรงกลาง B ถึง F เป๊ะๆ
+            sheet.mergeCells(`B${rowStart}:F${rowStart+1}`);
+            const title = sheet.getCell(`B${rowStart}`);
+            title.value = 'ใบรายงานสรุปงานซ่อมบำรุง\nMAINTENANCE REPAIR JOB REPORT';
+            title.font = titleFont;
+            title.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+
+            // เลขหน้าไปโผล่ที่คอลัมน์ G เพื่อไม่ให้กวนพื้นที่ตรงกลาง
+            sheet.mergeCells(`G${rowStart}:G${rowStart+1}`);
+            const pg = sheet.getCell(`G${rowStart}`);
+            pg.value = `Page ${pageNum}/3\n${jobId}`;
+            pg.font = { name: 'Sarabun', size: 9, bold: true };
+            pg.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
+            
+            sheet.getRow(rowStart).height = 25;
+            sheet.getRow(rowStart+1).height = 25;
+        };
+
         // ================= PAGE 1 =================
-        sheet.mergeCells('C1:D2');
-        const title1 = sheet.getCell('C1');
-        title1.value = 'ใบรายงานสรุปงานซ่อมบำรุง\nMAINTENANCE REPAIR JOB REPORT';
-        title1.font = titleFont;
-        title1.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        drawTitle(1, 1);
 
-        sheet.mergeCells('E1:F2');
-        const page1 = sheet.getCell('E1');
-        page1.value = `Page 1/3\nJob ID: ${jobId}`;
-        page1.font = boldFont;
-        page1.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
-
-        sheet.mergeCells('B3:F3');
-        const h1 = sheet.getCell('B3');
+        sheet.mergeCells('B4:F4');
+        const h1 = sheet.getCell('B4');
         h1.value = ' 1. ข้อมูลทั่วไป (General Information)';
         h1.font = boldFont;
         h1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+        setBorder(h1);
 
-        sheet.getCell('B4').value = 'ผู้แจ้ง:';
-        sheet.getCell('C4').value = r.requesterName || '-';
-        sheet.getCell('D4').value = 'สถานะงาน:';
-        sheet.getCell('E4').value = r.status || '-';
+        sheet.getCell('B5').value = 'ผู้แจ้ง:'; sheet.getCell('B5').font = boldFont;
+        sheet.getCell('C5').value = r.requesterName || '-';
+        sheet.getCell('D5').value = 'สถานะงาน:'; sheet.getCell('D5').font = boldFont;
+        sheet.mergeCells('E5:F5');
+        sheet.getCell('E5').value = r.status || '-';
         
-        sheet.getCell('B5').value = 'แผนก:';
-        sheet.getCell('C5').value = r.positionDept || '-';
-        sheet.getCell('D5').value = 'ความเร่งด่วน:';
-        sheet.getCell('E5').value = r.urgency === 'High' ? 'ด่วนมาก' : (r.urgency === 'Medium' ? 'ด่วน' : 'ปกติ');
+        sheet.getCell('B6').value = 'แผนก:'; sheet.getCell('B6').font = boldFont;
+        sheet.getCell('C6').value = r.positionDept || '-';
+        sheet.getCell('D6').value = 'ความเร่งด่วน:'; sheet.getCell('D6').font = boldFont;
+        sheet.mergeCells('E6:F6');
+        sheet.getCell('E6').value = r.urgency === 'High' ? 'ด่วนมาก' : (r.urgency === 'Medium' ? 'ด่วน' : 'ปกติ');
 
-        sheet.getCell('B6').value = 'ข้อมูลติดต่อกลับ:';
-        sheet.getCell('C6').value = r.phoneNumber || '-';
-        sheet.getCell('D6').value = 'วันที่แจ้ง:';
-        sheet.getCell('E6').value = r.requestDate ? new Date(r.requestDate).toLocaleString('th-TH') : '-';
+        sheet.getCell('B7').value = 'ข้อมูลติดต่อกลับ:'; sheet.getCell('B7').font = boldFont;
+        sheet.getCell('C7').value = r.phoneNumber || '-';
+        sheet.getCell('D7').value = 'วันที่แจ้ง:'; sheet.getCell('D7').font = boldFont;
+        sheet.mergeCells('E7:F7');
+        sheet.getCell('E7').value = r.requestDate ? new Date(r.requestDate).toLocaleString('th-TH') : '-';
 
-        sheet.mergeCells('B8:F8');
-        const h2 = sheet.getCell('B8');
+        ['B5','C5','D5','E5','F5','B6','C6','D6','E6','F6','B7','C7','D7','E7','F7'].forEach(c => setBorder(sheet.getCell(c)));
+
+        sheet.mergeCells('B9:F9');
+        const h2 = sheet.getCell('B9');
         h2.value = ' 2. ปัญหา/อาการเสีย (Problem Description)';
         h2.font = boldFont;
         h2.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+        setBorder(h2);
 
-        sheet.getCell('B9').value = 'อุปกรณ์:';
-        sheet.mergeCells('C9:F9');
-        sheet.getCell('C9').value = r.equipmentLocation || '-';
+        sheet.getCell('B10').value = 'อุปกรณ์:'; sheet.getCell('B10').font = boldFont;
+        sheet.mergeCells('C10:F10');
+        sheet.getCell('C10').value = r.equipmentLocation || '-';
 
-        sheet.getCell('B10').value = 'รายละเอียด:';
-        sheet.mergeCells('C10:F11');
-        const prob = sheet.getCell('C10');
+        sheet.getCell('B11').value = 'รายละเอียด:'; sheet.getCell('B11').font = boldFont;
+        sheet.mergeCells('C11:F13');
+        const prob = sheet.getCell('C11');
         prob.value = r.problemDetails || '-';
         prob.alignment = { vertical: 'top', wrapText: true };
+        
+        ['B10','C10','D10','E10','F10','B11','C11','D11','E11','F11','B12','C12','D12','E12','F12','B13','C13','D13','E13','F13'].forEach(c => setBorder(sheet.getCell(c)));
 
-        sheet.mergeCells('B13:F13');
-        const h3 = sheet.getCell('B13');
+        sheet.mergeCells('B15:F15');
+        const h3 = sheet.getCell('B15');
         h3.value = ' 3. การดำเนินงาน (Action Taken)';
         h3.font = boldFont;
         h3.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+        setBorder(h3);
 
-        sheet.getCell('B14').value = 'ช่างผู้รับผิดชอบ:';
-        sheet.mergeCells('C14:F14');
-        sheet.getCell('C14').value = r.technician || '-';
+        sheet.getCell('B16').value = 'ช่างผู้รับผิดชอบ:'; sheet.getCell('B16').font = boldFont;
+        sheet.mergeCells('C16:F16');
+        sheet.getCell('C16').value = r.technician || '-';
 
-        sheet.getCell('B15').value = 'เริ่มงาน:';
-        sheet.getCell('C15').value = r.acceptedDate ? new Date(r.acceptedDate).toLocaleString('th-TH') : '-';
-        sheet.getCell('D15').value = 'เสร็จสิ้น:';
-        sheet.getCell('E15').value = r.completedDate ? new Date(r.completedDate).toLocaleString('th-TH') : '-';
+        sheet.getCell('B17').value = 'เริ่มงาน:'; sheet.getCell('B17').font = boldFont;
+        sheet.getCell('C17').value = r.acceptedDate ? new Date(r.acceptedDate).toLocaleString('th-TH') : '-';
+        sheet.getCell('D17').value = 'เสร็จสิ้น:'; sheet.getCell('D17').font = boldFont;
+        sheet.mergeCells('E17:F17');
+        sheet.getCell('E17').value = r.completedDate ? new Date(r.completedDate).toLocaleString('th-TH') : '-';
 
-        sheet.getCell('B16').value = 'วิธีแก้ไข:';
-        sheet.mergeCells('C16:F17');
-        const rem = sheet.getCell('C16');
+        sheet.getCell('B18').value = 'วิธีแก้ไข:'; sheet.getCell('B18').font = boldFont;
+        sheet.mergeCells('C18:F20');
+        const rem = sheet.getCell('C18');
         rem.value = r.adminRemarks || '-';
         rem.alignment = { vertical: 'top', wrapText: true };
 
-        sheet.getCell('B18').value = 'หมายเหตุ:';
-        sheet.mergeCells('C18:F18');
-        sheet.getCell('C18').value = r.additionalNotes || '-';
+        sheet.getCell('B21').value = 'หมายเหตุ:'; sheet.getCell('B21').font = boldFont;
+        sheet.mergeCells('C21:F21');
+        sheet.getCell('C21').value = r.additionalNotes || '-';
 
-        sheet.mergeCells('B21:C21');
-        sheet.getCell('B21').value = 'ผู้แจ้ง (Requester)';
-        sheet.getCell('B21').alignment = { horizontal: 'center' };
-        sheet.getCell('B21').font = boldFont;
+        ['B16','C16','D16','E16','F16','B17','C17','D17','E17','F17',
+         'B18','C18','D18','E18','F18','B19','C19','D19','E19','F19',
+         'B20','C20','D20','E20','F20','B21','C21','D21','E21','F21'].forEach(c => setBorder(sheet.getCell(c)));
 
-        sheet.mergeCells('E21:F21');
-        sheet.getCell('E21').value = 'ช่างผู้รับผิดชอบ (Technician)';
-        sheet.getCell('E21').alignment = { horizontal: 'center' };
-        sheet.getCell('E21').font = boldFont;
+        sheet.mergeCells('B25:C25');
+        sheet.getCell('B25').value = 'ผู้แจ้ง (Requester)';
+        sheet.getCell('B25').alignment = { horizontal: 'center' };
+        sheet.getCell('B25').font = boldFont;
 
-        sheet.mergeCells('B23:C24');
-        const sigReq = sheet.getCell('B23');
+        sheet.mergeCells('E25:F25');
+        sheet.getCell('E25').value = 'ช่างผู้รับผิดชอบ (Technician)';
+        sheet.getCell('E25').alignment = { horizontal: 'center' };
+        sheet.getCell('E25').font = boldFont;
+
+        sheet.mergeCells('B27:C29');
+        const sigReq = sheet.getCell('B27');
         sigReq.value = `✅ VERIFIED via PIN\n( ${r.requesterName} )\nDate: ${r.completedDate ? new Date(r.completedDate).toLocaleString('th-TH') : '-'}`;
-        sigReq.alignment = { horizontal: 'center', wrapText: true };
+        sigReq.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        setBorder(sheet.getCell('B27')); setBorder(sheet.getCell('C27'));
+        setBorder(sheet.getCell('B28')); setBorder(sheet.getCell('C28'));
+        setBorder(sheet.getCell('B29')); setBorder(sheet.getCell('C29'));
 
-        sheet.mergeCells('E23:F24');
-        const sigTech = sheet.getCell('E23');
+        sheet.mergeCells('E27:F29');
+        const sigTech = sheet.getCell('E27');
         sigTech.value = `🛠️ JOB COMPLETED\n( ${r.technician || '-'} )\nDate: ${r.completedDate ? new Date(r.completedDate).toLocaleString('th-TH') : '-'}`;
-        sigTech.alignment = { horizontal: 'center', wrapText: true };
+        sigTech.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        setBorder(sheet.getCell('E27')); setBorder(sheet.getCell('F27'));
+        setBorder(sheet.getCell('E28')); setBorder(sheet.getCell('F28'));
+        setBorder(sheet.getCell('E29')); setBorder(sheet.getCell('F29'));
 
+        // ================= PAGE 2 (รายการอะไหล่) =================
+        const rPage2 = 40;
+        sheet.getRow(rPage2).addPageBreak(); // ตัดขึ้นหน้าใหม่ให้แผ่น 2
+        drawTitle(rPage2 + 1, 2);
+
+        sheet.mergeCells(`B${rPage2+4}:F${rPage2+4}`);
+        const h4 = sheet.getCell(`B${rPage2+4}`);
+        h4.value = ' รายการอุปกรณ์ที่ใช้ (Spare Parts)';
+        h4.font = boldFont;
+        h4.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+        setBorder(h4);
+
+        const thB = sheet.getCell(`B${rPage2+5}`); thB.value = 'ลำดับ'; thB.font = boldFont; thB.alignment = {horizontal:'center'}; setBorder(thB);
+        const thC = sheet.getCell(`C${rPage2+5}`); thC.value = 'รายการ (Item Name)'; thC.font = boldFont; thC.alignment = {horizontal:'center'}; setBorder(thC);
+        const thD = sheet.getCell(`D${rPage2+5}`); thD.value = 'จำนวน'; thD.font = boldFont; thD.alignment = {horizontal:'center'}; setBorder(thD);
+        const thE = sheet.getCell(`E${rPage2+5}`); thE.value = 'หน่วยละ'; thE.font = boldFont; thE.alignment = {horizontal:'center'}; setBorder(thE);
+        const thF = sheet.getCell(`F${rPage2+5}`); thF.value = 'รวม (บาท)'; thF.font = boldFont; thF.alignment = {horizontal:'center'}; setBorder(thF);
+
+        let items = [];
+        try { items = JSON.parse(r.itemsData || '[]'); } catch(e){}
+        let currentRow = rPage2+6;
+        
+        if(items.length === 0) {
+            sheet.getCell(`B${currentRow}`).value = '-'; setBorder(sheet.getCell(`B${currentRow}`)); sheet.getCell(`B${currentRow}`).alignment = {horizontal:'center'};
+            sheet.getCell(`C${currentRow}`).value = 'ไม่มีการใช้อะไหล่'; setBorder(sheet.getCell(`C${currentRow}`));
+            sheet.getCell(`D${currentRow}`).value = '-'; setBorder(sheet.getCell(`D${currentRow}`)); sheet.getCell(`D${currentRow}`).alignment = {horizontal:'center'};
+            sheet.getCell(`E${currentRow}`).value = '-'; setBorder(sheet.getCell(`E${currentRow}`)); sheet.getCell(`E${currentRow}`).alignment = {horizontal:'center'};
+            sheet.getCell(`F${currentRow}`).value = '-'; setBorder(sheet.getCell(`F${currentRow}`)); sheet.getCell(`F${currentRow}`).alignment = {horizontal:'center'};
+            currentRow++;
+        } else {
+            items.forEach((item, idx) => {
+                sheet.getCell(`B${currentRow}`).value = idx + 1; setBorder(sheet.getCell(`B${currentRow}`)); sheet.getCell(`B${currentRow}`).alignment = {horizontal:'center'};
+                sheet.getCell(`C${currentRow}`).value = item.name; setBorder(sheet.getCell(`C${currentRow}`));
+                sheet.getCell(`D${currentRow}`).value = item.quantity; setBorder(sheet.getCell(`D${currentRow}`)); sheet.getCell(`D${currentRow}`).alignment = {horizontal:'center'};
+                sheet.getCell(`E${currentRow}`).value = item.unitPrice; setBorder(sheet.getCell(`E${currentRow}`)); sheet.getCell(`E${currentRow}`).alignment = {horizontal:'center'};
+                sheet.getCell(`F${currentRow}`).value = item.total; setBorder(sheet.getCell(`F${currentRow}`)); sheet.getCell(`F${currentRow}`).alignment = {horizontal:'center'};
+                currentRow++;
+            });
+        }
+        
+        // เติมช่องว่างให้ตารางดูเต็มหน้า
+        while (currentRow < rPage2 + 20) {
+            ['B','C','D','E','F'].forEach(c => setBorder(sheet.getCell(`${c}${currentRow}`)));
+            currentRow++;
+        }
+
+        sheet.mergeCells(`B${currentRow}:E${currentRow}`);
+        const tLabel = sheet.getCell(`B${currentRow}`);
+        tLabel.value = 'ยอดรวมสุทธิ (Grand Total):'; tLabel.alignment = { horizontal: 'right' }; tLabel.font = boldFont; setBorder(tLabel);
+        setBorder(sheet.getCell(`C${currentRow}`)); setBorder(sheet.getCell(`D${currentRow}`)); setBorder(sheet.getCell(`E${currentRow}`));
+        
+        const tVal = sheet.getCell(`F${currentRow}`);
+        tVal.value = r.cost || 0; tVal.font = boldFont; tVal.alignment = {horizontal:'center'}; setBorder(tVal);
+
+        // ================= PAGE 3 (รูปภาพ ใหญ่และอยู่บน-ล่าง) =================
+        const rPage3 = 80;
+        sheet.getRow(rPage3).addPageBreak(); // ตัดขึ้นหน้าใหม่ให้แผ่น 3
+        drawTitle(rPage3 + 1, 3);
+
+        sheet.mergeCells(`B${rPage3+4}:F${rPage3+4}`);
+        const h5 = sheet.getCell(`B${rPage3+4}`);
+        h5.value = ' หลักฐานรูปภาพ (Photographic Evidence)';
+        h5.font = boldFont;
+        h5.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+        setBorder(h5);
+
+        // ---- รูปภาพ ก่อนซ่อม ----
+        sheet.mergeCells(`B${rPage3+6}:F${rPage3+6}`);
+        const lblBefore = sheet.getCell(`B${rPage3+6}`);
+        lblBefore.value = '📷 รูปก่อนซ่อม (Before Repair):';
+        lblBefore.font = boldFont;
+
+        const b64Before = await getBase64Image(r.imageBefore);
+        if (b64Before) {
+            const imgId = workbook.addImage({ base64: b64Before, extension: 'jpeg' });
+            // แปะรูปขนาดใหญ่ ขยายจาก B ถึง F และสูง 15 บรรทัด
+            sheet.addImage(imgId, `B${rPage3+7}:F${rPage3+22}`);
+        } else if (r.imageBefore) {
+            sheet.mergeCells(`B${rPage3+7}:F${rPage3+8}`);
+            sheet.getCell(`B${rPage3+7}`).value = { text: '>> คลิกลิงก์เพื่อเปิดดูรูปภาพ (ไฟล์เก่า) <<', hyperlink: r.imageBefore };
+            sheet.getCell(`B${rPage3+7}`).font = { ...thFont, color: { argb: 'FF0563C1' }, underline: true };
+        } else {
+            sheet.getCell(`B${rPage3+7}`).value = '- ไม่มีรูปภาพ -';
+        }
+
+        // ---- รูปภาพ หลังซ่อม ----
+        const rAfter = rPage3 + 24;
+        sheet.mergeCells(`B${rAfter}:F${rAfter}`);
+        const lblAfter = sheet.getCell(`B${rAfter}`);
+        lblAfter.value = '📷 รูปหลังซ่อม (After Repair):';
+        lblAfter.font = boldFont;
+        
+        const b64After = await getBase64Image(r.imageAfter);
+        if (b64After) {
+            const imgId2 = workbook.addImage({ base64: b64After, extension: 'jpeg' });
+            // แปะรูปขนาดใหญ่ ขยายจาก B ถึง F และสูง 15 บรรทัด
+            sheet.addImage(imgId2, `B${rAfter+1}:F${rAfter+16}`);
+        } else if (r.imageAfter) {
+            sheet.mergeCells(`B${rAfter+1}:F${rAfter+2}`);
+            sheet.getCell(`B${rAfter+1}`).value = { text: '>> คลิกลิงก์เพื่อเปิดดูรูปภาพ (ไฟล์เก่า) <<', hyperlink: r.imageAfter };
+            sheet.getCell(`B${rAfter+1}`).font = { ...thFont, color: { argb: 'FF0563C1' }, underline: true };
+        } else {
+            sheet.getCell(`B${rAfter+1}`).value = '- ไม่มีรูปภาพ -';
+        }
+
+        // เซ็ตฟอนต์ทั้งหน้าให้ชัวร์
         sheet.eachRow((row) => {
             row.eachCell((cell) => {
                 if (!cell.font) cell.font = thFont;
                 else cell.font.name = 'Sarabun';
             });
         });
-
-        // ================= PAGE 2 (รายการอะไหล่) =================
-        const rPage2 = 45;
-        sheet.mergeCells(`C${rPage2}:D${rPage2+1}`);
-        const title2 = sheet.getCell(`C${rPage2}`);
-        title2.value = 'ใบรายงานสรุปงานซ่อมบำรุง\nMAINTENANCE REPAIR JOB REPORT';
-        title2.font = titleFont;
-        title2.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-
-        sheet.mergeCells(`E${rPage2}:F${rPage2+1}`);
-        const page2 = sheet.getCell(`E${rPage2}`);
-        page2.value = `Page 2/3\nJob ID: ${jobId}`;
-        page2.font = boldFont;
-        page2.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
-
-        sheet.mergeCells(`B${rPage2+3}:F${rPage2+3}`);
-        const h4 = sheet.getCell(`B${rPage2+3}`);
-        h4.value = ' รายการอุปกรณ์ที่ใช้ (Spare Parts)';
-        h4.font = boldFont;
-        h4.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
-
-        const thB = sheet.getCell(`B${rPage2+4}`); thB.value = 'ลำดับ'; setBorder(thB);
-        const thC = sheet.getCell(`C${rPage2+4}`); thC.value = 'รายการ (Item Name)'; setBorder(thC);
-        const thD = sheet.getCell(`D${rPage2+4}`); thD.value = 'จำนวน'; setBorder(thD);
-        const thE = sheet.getCell(`E${rPage2+4}`); thE.value = 'หน่วยละ'; setBorder(thE);
-        const thF = sheet.getCell(`F${rPage2+4}`); thF.value = 'รวม'; setBorder(thF);
-
-        let items = [];
-        try { items = JSON.parse(r.itemsData || '[]'); } catch(e){}
-        let currentRow = rPage2+5;
-        
-        if(items.length === 0) {
-            sheet.getCell(`B${currentRow}`).value = '-'; setBorder(sheet.getCell(`B${currentRow}`));
-            sheet.getCell(`C${currentRow}`).value = 'ไม่มีการใช้อะไหล่'; setBorder(sheet.getCell(`C${currentRow}`));
-            sheet.getCell(`D${currentRow}`).value = '-'; setBorder(sheet.getCell(`D${currentRow}`));
-            sheet.getCell(`E${currentRow}`).value = '-'; setBorder(sheet.getCell(`E${currentRow}`));
-            sheet.getCell(`F${currentRow}`).value = '-'; setBorder(sheet.getCell(`F${currentRow}`));
-            currentRow++;
-        } else {
-            items.forEach((item, idx) => {
-                sheet.getCell(`B${currentRow}`).value = idx + 1; setBorder(sheet.getCell(`B${currentRow}`));
-                sheet.getCell(`C${currentRow}`).value = item.name; setBorder(sheet.getCell(`C${currentRow}`));
-                sheet.getCell(`D${currentRow}`).value = item.quantity; setBorder(sheet.getCell(`D${currentRow}`));
-                sheet.getCell(`E${currentRow}`).value = item.unitPrice; setBorder(sheet.getCell(`E${currentRow}`));
-                sheet.getCell(`F${currentRow}`).value = item.total; setBorder(sheet.getCell(`F${currentRow}`));
-                currentRow++;
-            });
-        }
-        
-        sheet.mergeCells(`B${currentRow}:E${currentRow}`);
-        const tLabel = sheet.getCell(`B${currentRow}`);
-        tLabel.value = 'Total:'; tLabel.alignment = { horizontal: 'right' }; tLabel.font = boldFont; setBorder(tLabel);
-        const tVal = sheet.getCell(`F${currentRow}`);
-        tVal.value = r.cost || 0; tVal.font = boldFont; setBorder(tVal);
-
-        // ================= PAGE 3 (รูปภาพ ฝังลงใน EXCEL จริงๆ) =================
-        const rPage3 = 90;
-        sheet.mergeCells(`C${rPage3}:D${rPage3+1}`);
-        const title3 = sheet.getCell(`C${rPage3}`);
-        title3.value = 'ใบรายงานสรุปงานซ่อมบำรุง\nMAINTENANCE REPAIR JOB REPORT';
-        title3.font = titleFont;
-        title3.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-
-        sheet.mergeCells(`E${rPage3}:F${rPage3+1}`);
-        const page3 = sheet.getCell(`E${rPage3}`);
-        page3.value = `Page 3/3\nJob ID: ${jobId}`;
-        page3.font = boldFont;
-        page3.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
-
-        sheet.mergeCells(`B${rPage3+3}:F${rPage3+3}`);
-        const h5 = sheet.getCell(`B${rPage3+3}`);
-        h5.value = ' หลักฐานรูปภาพ (Photographic Evidence)';
-        h5.font = boldFont;
-        h5.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
-
-        sheet.mergeCells(`B${rPage3+4}:C${rPage3+4}`);
-        sheet.getCell(`B${rPage3+4}`).value = '📷 รูปก่อนซ่อม (Before Repair):';
-        
-        const b64Before = await getBase64Image(r.imageBefore);
-        if (b64Before) {
-            // ใช้ extension เป็น jpeg และใส่รหัส Base64 ที่ตัด Header ออกแล้ว
-            const imgId = workbook.addImage({ base64: b64Before, extension: 'jpeg' });
-            sheet.addImage(imgId, `B${rPage3+5}:D${rPage3+20}`);
-        } else if (r.imageBefore) {
-            sheet.mergeCells(`B${rPage3+5}:C${rPage3+6}`);
-            sheet.getCell(`B${rPage3+5}`).value = { text: '>> คลิกลิงก์เพื่อเปิดดูรูปภาพ (ไฟล์เก่า) <<', hyperlink: r.imageBefore };
-            sheet.getCell(`B${rPage3+5}`).font = { ...thFont, color: { argb: 'FF0563C1' }, underline: true };
-        } else {
-            sheet.getCell(`B${rPage3+5}`).value = '- ไม่มีรูปภาพ -';
-        }
-
-        sheet.mergeCells(`E${rPage3+4}:F${rPage3+4}`);
-        sheet.getCell(`E${rPage3+4}`).value = '📷 รูปหลังซ่อม (After Repair):';
-        
-        const b64After = await getBase64Image(r.imageAfter);
-        if (b64After) {
-            // ใช้ extension เป็น jpeg และใส่รหัส Base64 ที่ตัด Header ออกแล้ว
-            const imgId2 = workbook.addImage({ base64: b64After, extension: 'jpeg' });
-            sheet.addImage(imgId2, `E${rPage3+5}:F${rPage3+20}`);
-        } else if (r.imageAfter) {
-            sheet.mergeCells(`E${rPage3+5}:F${rPage3+6}`);
-            sheet.getCell(`E${rPage3+5}`).value = { text: '>> คลิกลิงก์เพื่อเปิดดูรูปภาพ (ไฟล์เก่า) <<', hyperlink: r.imageAfter };
-            sheet.getCell(`E${rPage3+5}`).font = { ...thFont, color: { argb: 'FF0563C1' }, underline: true };
-        } else {
-            sheet.getCell(`E${rPage3+5}`).value = '- ไม่มีรูปภาพ -';
-        }
     }
 
     // ฟังก์ชันเมื่อกดปุ่ม "🖨️ โหลดใบงานที่เลือก" จากหน้าตาราง
@@ -712,7 +751,7 @@
         
         Swal.fire({ 
             title: 'กำลังสร้างไฟล์ใบงาน...', 
-            text: `กำลังดึงรูปภาพและประมวลผล ${checkboxes.length} งาน (กรุณารอสักครู่)`, 
+            text: `กำลังประทับตรารูปภาพและจัดหน้ากระดาษ ${checkboxes.length} งาน (กรุณารอสักครู่)`, 
             didOpen: () => Swal.showLoading(), 
             allowOutsideClick: false 
         });
@@ -725,7 +764,7 @@
             
             const buffer = await workbook.xlsx.writeBuffer();
             const dateStr = new Date().toISOString().split('T')[0];
-            saveAs(new Blob([buffer]), `Job_Reports_Selected_${dateStr}.xlsx`);
+            saveAs(new Blob([buffer]), `Job_Reports_${dateStr}.xlsx`);
             Swal.close();
         } catch (e) {
             console.error(e);
