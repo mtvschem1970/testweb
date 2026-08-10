@@ -432,84 +432,41 @@
     // 2.5 EXPORT REPORT TO EXCEL (WITH IMAGES) & BATCH EXPORT
     // ----------------------------------------------------------------
 
-    // ฟังก์ชันแปลง Blob เป็น Base64 Data URL
-    function blobToDataUrl(blob) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onerror = reject;
-            reader.onloadend = () => resolve(reader.result);
-            reader.readAsDataURL(blob);
-        });
-    }
-
-    // ดึงรูปภาพมาทำเป็น Base64 เพื่อฝังลง Excel จริงๆ
-    // ลองดึงตรงจาก Firebase Storage ก่อน (รองรับ CORS อยู่แล้ว) แล้วค่อย fallback ไปใช้ proxy
+    // ฟังก์ชันดึงรูปภาพและแปลงให้เป็น Base64 แบบสมบูรณ์ (ตัด Header ทิ้งให้ Excel อ่านออก)
     async function getBase64Image(url) {
         if (!url || url.includes('drive.google')) return null; // ข้ามรูปเก่าที่มาจากไดรฟ์
-
-        // 1) ลองดึงตรงๆ ก่อน (Firebase Storage download URL รองรับ CORS)
+        
         try {
-            const res = await fetch(url, { mode: 'cors' });
-            if (res.ok) {
-                const blob = await res.blob();
-                if (blob && blob.size > 0) return await blobToDataUrl(blob);
+            let res;
+            try {
+                // ลองดึงตรงๆ ก่อน
+                res = await fetch(url);
+                if(!res.ok) throw new Error("Fetch failed");
+            } catch(e) {
+                // ถ้าติดบล็อก ใช้ Proxy ยอดนิยมเพื่อรับรูปภาพแทน
+                const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
+                res = await fetch(proxyUrl);
             }
+            
+            const blob = await res.blob();
+            if (!blob.type.includes('image')) return null;
+
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const result = reader.result;
+                    // ตัด 'data:image/jpeg;base64,' ทิ้ง เพราะ ExcelJS ต้องการแค่รหัสเพียวๆ
+                    if (result && result.includes(',')) {
+                        resolve(result.split(',')[1]); 
+                    } else {
+                        resolve(null);
+                    }
+                };
+                reader.readAsDataURL(blob);
+            });
         } catch (e) {
-            console.warn('ดึงรูปตรงไม่สำเร็จ กำลังลอง Proxy...', e);
-        }
-
-        // 2) Proxy สำรอง 1
-        try {
-            const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
-            const res = await fetch(proxyUrl);
-            if (res.ok) {
-                const blob = await res.blob();
-                if (blob && blob.size > 0) return await blobToDataUrl(blob);
-            }
-        } catch (e) {
-            console.warn('Proxy 1 ไม่สำเร็จ กำลังลอง Proxy 2...', e);
-        }
-
-        // 3) Proxy สำรอง 2
-        try {
-            const proxyUrl2 = "https://corsproxy.io/?" + encodeURIComponent(url);
-            const res = await fetch(proxyUrl2);
-            if (res.ok) {
-                const blob = await res.blob();
-                if (blob && blob.size > 0) return await blobToDataUrl(blob);
-            }
-        } catch (err) {
-            console.warn("ดึงรูปภาพไม่สำเร็จ (อาจติด CORS หรือ Network):", err);
-        }
-
-        return null;
-    }
-
-    // หาสกุลไฟล์รูปจริงจาก Data URL (แก้ปัญหา Excel เปิดรูปไม่ขึ้นเพราะระบุนามสกุลผิด)
-    function getImageExtension(dataUrl) {
-        if (!dataUrl) return 'jpeg';
-        const match = dataUrl.match(/^data:image\/([a-zA-Z0-9.+-]+);/);
-        if (!match) return 'jpeg';
-        let ext = match[1].toLowerCase();
-        if (ext === 'jpg') ext = 'jpeg';
-        // ExcelJS รองรับแค่ jpeg, png, gif เท่านั้น
-        if (!['jpeg', 'png', 'gif'].includes(ext)) ext = 'jpeg';
-        return ext;
-    }
-
-    // ฟังก์ชันช่วยฝังรูปลงชีท พร้อมจัดการ error/extension ให้อัตโนมัติ
-    async function embedImageInSheet(workbook, sheet, imageUrl, cellRange) {
-        if (!imageUrl) return false;
-        const b64 = await getBase64Image(imageUrl);
-        if (!b64) return false;
-        try {
-            const ext = getImageExtension(b64);
-            const imgId = workbook.addImage({ base64: b64, extension: ext });
-            sheet.addImage(imgId, cellRange);
-            return true;
-        } catch (e) {
-            console.warn('ฝังรูปภาพลง Excel ไม่สำเร็จ:', e);
-            return false;
+            console.warn("ดึงรูปภาพไม่สำเร็จ:", e);
+            return null;
         }
     }
 
@@ -693,7 +650,7 @@
         const tVal = sheet.getCell(`F${currentRow}`);
         tVal.value = r.cost || 0; tVal.font = boldFont; setBorder(tVal);
 
-        // ================= PAGE 3 (รูปภาพ ฝังลงใน EXCEL จริง) =================
+        // ================= PAGE 3 (รูปภาพ ฝังลงใน EXCEL จริงๆ) =================
         const rPage3 = 90;
         sheet.mergeCells(`C${rPage3}:D${rPage3+1}`);
         const title3 = sheet.getCell(`C${rPage3}`);
@@ -715,30 +672,34 @@
 
         sheet.mergeCells(`B${rPage3+4}:C${rPage3+4}`);
         sheet.getCell(`B${rPage3+4}`).value = '📷 รูปก่อนซ่อม (Before Repair):';
-
-        const beforeEmbedded = await embedImageInSheet(workbook, sheet, r.imageBefore, `B${rPage3+5}:D${rPage3+20}`);
-        if (!beforeEmbedded) {
-            if (r.imageBefore) {
-                sheet.mergeCells(`B${rPage3+5}:C${rPage3+6}`);
-                sheet.getCell(`B${rPage3+5}`).value = { text: '>> คลิกลิงก์เพื่อเปิดดูรูปภาพ (ไม่สามารถฝังรูปอัตโนมัติได้) <<', hyperlink: r.imageBefore };
-                sheet.getCell(`B${rPage3+5}`).font = { ...thFont, color: { argb: 'FF0563C1' }, underline: true };
-            } else {
-                sheet.getCell(`B${rPage3+5}`).value = '- ไม่มีรูปภาพ -';
-            }
+        
+        const b64Before = await getBase64Image(r.imageBefore);
+        if (b64Before) {
+            // ใช้ extension เป็น jpeg และใส่รหัส Base64 ที่ตัด Header ออกแล้ว
+            const imgId = workbook.addImage({ base64: b64Before, extension: 'jpeg' });
+            sheet.addImage(imgId, `B${rPage3+5}:D${rPage3+20}`);
+        } else if (r.imageBefore) {
+            sheet.mergeCells(`B${rPage3+5}:C${rPage3+6}`);
+            sheet.getCell(`B${rPage3+5}`).value = { text: '>> คลิกลิงก์เพื่อเปิดดูรูปภาพ (ไฟล์เก่า) <<', hyperlink: r.imageBefore };
+            sheet.getCell(`B${rPage3+5}`).font = { ...thFont, color: { argb: 'FF0563C1' }, underline: true };
+        } else {
+            sheet.getCell(`B${rPage3+5}`).value = '- ไม่มีรูปภาพ -';
         }
 
         sheet.mergeCells(`E${rPage3+4}:F${rPage3+4}`);
         sheet.getCell(`E${rPage3+4}`).value = '📷 รูปหลังซ่อม (After Repair):';
-
-        const afterEmbedded = await embedImageInSheet(workbook, sheet, r.imageAfter, `E${rPage3+5}:F${rPage3+20}`);
-        if (!afterEmbedded) {
-            if (r.imageAfter) {
-                sheet.mergeCells(`E${rPage3+5}:F${rPage3+6}`);
-                sheet.getCell(`E${rPage3+5}`).value = { text: '>> คลิกลิงก์เพื่อเปิดดูรูปภาพ (ไม่สามารถฝังรูปอัตโนมัติได้) <<', hyperlink: r.imageAfter };
-                sheet.getCell(`E${rPage3+5}`).font = { ...thFont, color: { argb: 'FF0563C1' }, underline: true };
-            } else {
-                sheet.getCell(`E${rPage3+5}`).value = '- ไม่มีรูปภาพ -';
-            }
+        
+        const b64After = await getBase64Image(r.imageAfter);
+        if (b64After) {
+            // ใช้ extension เป็น jpeg และใส่รหัส Base64 ที่ตัด Header ออกแล้ว
+            const imgId2 = workbook.addImage({ base64: b64After, extension: 'jpeg' });
+            sheet.addImage(imgId2, `E${rPage3+5}:F${rPage3+20}`);
+        } else if (r.imageAfter) {
+            sheet.mergeCells(`E${rPage3+5}:F${rPage3+6}`);
+            sheet.getCell(`E${rPage3+5}`).value = { text: '>> คลิกลิงก์เพื่อเปิดดูรูปภาพ (ไฟล์เก่า) <<', hyperlink: r.imageAfter };
+            sheet.getCell(`E${rPage3+5}`).font = { ...thFont, color: { argb: 'FF0563C1' }, underline: true };
+        } else {
+            sheet.getCell(`E${rPage3+5}`).value = '- ไม่มีรูปภาพ -';
         }
     }
 
